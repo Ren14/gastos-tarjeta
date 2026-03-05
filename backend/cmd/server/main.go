@@ -51,6 +51,13 @@ func main() {
 		r.Get("/summary/by-card", handlers.GetSummaryByCard)
 
 		r.Get("/summary/projection", handlers.GetProjection)
+
+		r.Get("/exchange-rates", handlers.GetExchangeRates)
+		r.Post("/exchange-rates", handlers.CreateExchangeRate)
+		r.Put("/exchange-rates/{id}", handlers.UpdateExchangeRate)
+
+		r.Get("/recurring", handlers.GetRecurring)
+		r.Post("/recurring/generate", handlers.GenerateRecurring)
 	})
 
 	port := os.Getenv("PORT")

@@ -2,11 +2,13 @@ import { useState } from 'react'
 import { LoadExpense } from './pages/ExpenseForm'
 import { Dashboard } from './pages/Dashboard'
 import { Projection } from './pages/Projection'
+import { Config } from './pages/Config'
 
 const TABS = [
     { id: 'load',       label: '+ Load' },
     { id: 'dashboard',  label: '📊 Dashboard' },
     { id: 'projection', label: '🔮 Futuro' },
+    { id: 'config',     label: '⚙️' },
 ]
 
 export default function App() {
@@ -53,7 +55,7 @@ export default function App() {
                 {activeTab === 'projection' && (
                     <Projection onNavigateToDashboard={navigateToDashboard} />
                 )}
-
+                {activeTab === 'config' && <Config />}
             </div>
         </div>
     )
