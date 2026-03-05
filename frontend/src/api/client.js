@@ -31,4 +31,5 @@ export const api = {
     },
     getSummaryByCard: (month, year) =>
         request(`/summary/by-card?month=${month}&year=${year}`),
+    getProjection: (months = 6) => request(`/summary/projection?months=${months}`),
 }

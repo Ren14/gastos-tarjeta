@@ -178,3 +178,108 @@ func GetSummaryByCard(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(result)
 }
+
+func GetProjection(w http.ResponseWriter, r *http.Request) {
+	monthsStr := r.URL.Query().Get("months")
+	months, err := strconv.Atoi(monthsStr)
+	if err != nil || months == 0 {
+		months = 6
+	}
+
+	// Traemos todas las tarjetas activas
+	cardRows, err := db.Pool.Query(context.Background(),
+		"SELECT id, name, COALESCE(color_hex,'') FROM cards WHERE active = true ORDER BY name")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer cardRows.Close()
+
+	type CardInfo struct {
+		ID       int
+		Name     string
+		ColorHex string
+	}
+	cardMap := map[int]CardInfo{}
+	for cardRows.Next() {
+		var c CardInfo
+		cardRows.Scan(&c.ID, &c.Name, &c.ColorHex)
+		cardMap[c.ID] = c
+	}
+
+	// Traemos todos los gastos
+	rows, err := db.Pool.Query(context.Background(),
+		"SELECT total_amount, installments, purchase_date, card_id FROM expenses")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer rows.Close()
+
+	// Estructura: mes -> card_id -> total
+	type MonthData struct {
+		Month   int                  `json:"month"`
+		Year    int                  `json:"year"`
+		Total   float64              `json:"total"`
+		ByCard  []models.CardSummary `json:"by_card"`
+		HasData bool                 `json:"has_data"`
+	}
+
+	now := time.Now()
+	// Inicializamos los próximos N meses
+	monthTotals := make([]map[int]float64, months)
+	monthDates := make([]time.Time, months)
+	for i := 0; i < months; i++ {
+		monthDates[i] = time.Date(now.Year(), now.Month()+time.Month(i), 1, 0, 0, 0, 0, time.UTC)
+		monthTotals[i] = map[int]float64{}
+	}
+
+	for rows.Next() {
+		var totalAmount float64
+		var installments, cardID int
+		var purchaseDate time.Time
+		rows.Scan(&totalAmount, &installments, &purchaseDate, &cardID)
+
+		firstImpact := getFirstImpactMonth(purchaseDate.Format("2006-01-02"))
+
+		for i, targetMonth := range monthDates {
+			lastImpact := time.Date(firstImpact.Year(), firstImpact.Month()+time.Month(installments)-1, 1, 0, 0, 0, 0, time.UTC)
+			if targetMonth.Before(firstImpact) || targetMonth.After(lastImpact) {
+				continue
+			}
+			monthTotals[i][cardID] += totalAmount / float64(installments)
+		}
+	}
+
+	result := []MonthData{}
+	for i, targetMonth := range monthDates {
+		byCard := []models.CardSummary{}
+		total := 0.0
+		hasData := false
+
+		for id, info := range cardMap {
+			cardTotal := monthTotals[i][id]
+			byCard = append(byCard, models.CardSummary{
+				CardID:   id,
+				CardName: info.Name,
+				ColorHex: info.ColorHex,
+				Total:    cardTotal,
+			})
+			total += cardTotal
+			if cardTotal > 0 {
+				hasData = true
+			}
+		}
+
+		result = append(result, MonthData{
+			Month:   int(targetMonth.Month()),
+			Year:    targetMonth.Year(),
+			Total:   total,
+			ByCard:  byCard,
+			HasData: hasData,
+		})
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(result)
+}

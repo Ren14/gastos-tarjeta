@@ -49,6 +49,8 @@ func main() {
 
 		r.Get("/summary/monthly", handlers.GetMonthlySummary)
 		r.Get("/summary/by-card", handlers.GetSummaryByCard)
+
+		r.Get("/summary/projection", handlers.GetProjection)
 	})
 
 	port := os.Getenv("PORT")

@@ -1,21 +1,30 @@
 import { useState } from 'react'
 import { LoadExpense } from './pages/ExpenseForm'
 import { Dashboard } from './pages/Dashboard'
+import { Projection } from './pages/Projection'
 
 const TABS = [
-    { id: 'load',      label: '+ Load' },
-    { id: 'dashboard', label: '📊 Dashboard' },
+    { id: 'load',       label: '+ Load' },
+    { id: 'dashboard',  label: '📊 Dashboard' },
+    { id: 'projection', label: '🔮 Futuro' },
 ]
 
 export default function App() {
     const [activeTab, setActiveTab] = useState('load')
     const [savedCount, setSavedCount] = useState(0)
+    const [dashMonth, setDashMonth] = useState(null)
+    const [dashYear, setDashYear] = useState(null)
+
+    function navigateToDashboard(month, year) {
+        setDashMonth(month)
+        setDashYear(year)
+        setActiveTab('dashboard')
+    }
 
     return (
         <div className="min-h-screen bg-stone-100">
             <div className="max-w-md mx-auto px-4 pt-8 pb-24">
 
-                {/* Tab nav */}
                 <div className="flex bg-white border border-gray-200 rounded-xl overflow-hidden mb-6">
                     {TABS.map(tab => (
                         <button key={tab.id} onClick={() => setActiveTab(tab.id)}
@@ -34,7 +43,16 @@ export default function App() {
                         setActiveTab('dashboard')
                     }} />
                 )}
-                {activeTab === 'dashboard' && <Dashboard key={savedCount} />}
+                {activeTab === 'dashboard' && (
+                    <Dashboard
+                        key={savedCount}
+                        initialMonth={dashMonth}
+                        initialYear={dashYear}
+                    />
+                )}
+                {activeTab === 'projection' && (
+                    <Projection onNavigateToDashboard={navigateToDashboard} />
+                )}
 
             </div>
         </div>

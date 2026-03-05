@@ -5,10 +5,10 @@ import { MonthNav } from '../components/MonthNav'
 import { CardDropdown } from '../components/CardDropdown'
 import { ExpenseList } from '../components/ExpenseList'
 
-export function Dashboard() {
+export function Dashboard({ initialMonth, initialYear }) {
     const now = new Date()
-    const [month, setMonth] = useState(now.getMonth() + 1)
-    const [year, setYear] = useState(now.getFullYear())
+    const [month, setMonth] = useState(initialMonth ?? now.getMonth() + 1)
+    const [year, setYear] = useState(initialYear ?? now.getFullYear())
     const [selectedCardId, setSelectedCardId] = useState(null)
 
     const { cards } = useCards()
