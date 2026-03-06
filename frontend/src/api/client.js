@@ -18,6 +18,7 @@ export const api = {
     // Cards
     getCards: () => request('/cards'),
     createCard: (data) => request('/cards', {method: 'POST', body: JSON.stringify(data)}),
+    updateCard: (id, data) => request(`/cards/${id}`, {method: 'PUT', body: JSON.stringify(data)}),
 
     // Categories
     getCategories: () => request('/categories'),
