@@ -58,6 +58,8 @@ func main() {
 
 		r.Get("/recurring", handlers.GetRecurring)
 		r.Post("/recurring/generate", handlers.GenerateRecurring)
+
+		r.Put("/expenses/{id}", handlers.UpdateExpense)
 	})
 
 	port := os.Getenv("PORT")

@@ -1,20 +1,29 @@
 import { useState } from 'react'
 import { useCards } from '../hooks/useCards'
+import { useCategories } from '../hooks/useCategories'
 import { useMonthlySummary } from '../hooks/useMonthlySummary'
 import { MonthNav } from '../components/MonthNav'
 import { CardDropdown } from '../components/CardDropdown'
 import { ExpenseList } from '../components/ExpenseList'
+import { ExpenseBottomSheet } from '../components/ExpenseBottomSheet'
 
 export function Dashboard({ initialMonth, initialYear }) {
     const now = new Date()
     const [month, setMonth] = useState(initialMonth ?? now.getMonth() + 1)
     const [year, setYear] = useState(initialYear ?? now.getFullYear())
     const [selectedCardId, setSelectedCardId] = useState(null)
+    const [selectedExpense, setSelectedExpense] = useState(null)
+    const [refreshKey, setRefreshKey] = useState(0)
 
     const { cards } = useCards()
-    const { summary, byCard, loading } = useMonthlySummary(month, year, selectedCardId)
+    const { categories } = useCategories()
+    const { summary, byCard, loading } = useMonthlySummary(month, year, selectedCardId, refreshKey)
 
     const grandTotal = byCard.reduce((sum, c) => sum + c.total, 0)
+
+    function refresh() {
+        setRefreshKey(k => k + 1)
+    }
 
     return (
         <div>
@@ -25,7 +34,6 @@ export function Dashboard({ initialMonth, initialYear }) {
                 <p className="text-center text-gray-400 py-8">Loading...</p>
             ) : (
                 <>
-                    {/* KPI */}
                     <div className="bg-gray-900 text-white rounded-xl px-4 py-3 mb-4">
                         <p className="text-xs opacity-60 uppercase tracking-wide">
                             {selectedCardId ? cards.find(c => c.id === selectedCardId)?.name : 'Monthly total'}
@@ -36,7 +44,6 @@ export function Dashboard({ initialMonth, initialYear }) {
                         </p>
                     </div>
 
-                    {/* All cards view — subtotals */}
                     {!selectedCardId && (
                         <div className="bg-white border border-gray-200 rounded-xl px-4 py-3 mb-4">
                             <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-3">By card</p>
@@ -55,15 +62,24 @@ export function Dashboard({ initialMonth, initialYear }) {
                         </div>
                     )}
 
-                    {/* Single card view — expense list */}
                     {selectedCardId && summary && (
                         <ExpenseList
                             expenses={summary.expenses}
-                            onDeleted={() => setMonth(m => m)}
+                            onSelect={setSelectedExpense}
+                            onDeleted={refresh}
                         />
                     )}
                 </>
             )}
+
+            <ExpenseBottomSheet
+                expense={selectedExpense}
+                cards={cards}
+                categories={categories}
+                onClose={() => setSelectedExpense(null)}
+                onSaved={refresh}
+                onDeleted={refresh}
+            />
         </div>
     )
 }

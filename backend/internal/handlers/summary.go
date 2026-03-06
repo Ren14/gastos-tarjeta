@@ -96,6 +96,8 @@ func GetMonthlySummary(w http.ResponseWriter, r *http.Request) {
 			CardName:          cardName,
 			CategoryID:        categoryID,
 			IsRecurring:       recurringID != nil,
+			PurchaseDate:      purchaseDate.Format("2006-01-02"), // ← agregar
+			TotalAmount:       totalAmount,
 		})
 		total += installmentAmount
 	}

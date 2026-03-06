@@ -10,8 +10,8 @@ async function request(path, options = {}) {
         error.status = res.status
         throw error
     }
-    if (res.status === 204) return null
-    return res.json()
+    const text = await res.text()
+    return text ? JSON.parse(text) : null
 }
 
 export const api = {
@@ -48,4 +48,6 @@ export const api = {
         method: 'POST',
         body: JSON.stringify({month, year})
     }),
+
+    updateExpense: (id, data) => request(`/expenses/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
 }

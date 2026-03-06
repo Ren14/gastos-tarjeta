@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { api } from '../api/client'
 
-export function useMonthlySummary(month, year, cardId) {
+export function useMonthlySummary(month, year, cardId, refreshKey = 0) {
     const [summary, setSummary] = useState(null)
     const [byCard, setByCard] = useState([])
     const [loading, setLoading] = useState(true)
@@ -18,7 +18,7 @@ export function useMonthlySummary(month, year, cardId) {
                 else setSummary(null)
             })
             .finally(() => setLoading(false))
-    }, [month, year, cardId])
+    }, [month, year, cardId, refreshKey])
 
     return { summary, byCard, loading }
 }

@@ -94,3 +94,35 @@ func DeleteExpense(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusNoContent)
 }
+
+func UpdateExpense(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.Atoi(chi.URLParam(r, "id"))
+	if err != nil {
+		http.Error(w, "invalid id", http.StatusBadRequest)
+		return
+	}
+
+	var e models.Expense
+	if err := json.NewDecoder(r.Body).Decode(&e); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	if e.Installments == 0 {
+		e.Installments = 1
+	}
+
+	_, err = db.Pool.Exec(context.Background(),
+		`UPDATE expenses SET card_id=$1, category_id=$2, merchant=$3,
+		total_amount=$4, installments=$5, purchase_date=$6, notes=$7
+		WHERE id=$8`,
+		e.CardID, e.CategoryID, e.Merchant,
+		e.TotalAmount, e.Installments, e.PurchaseDate, e.Notes, id,
+	)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+}
