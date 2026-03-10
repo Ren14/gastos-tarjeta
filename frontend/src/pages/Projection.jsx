@@ -9,6 +9,7 @@ function MonthCard({ data, onClick }) {
         .sort((a, b) => b.total - a.total)
 
     const emptyCards = data.by_card.filter(c => c.total === 0)
+    const isPending = data.has_pending_recurring
 
     if (!data.has_data) {
         return (
@@ -29,20 +30,27 @@ function MonthCard({ data, onClick }) {
             className="bg-white border border-gray-200 rounded-xl px-4 py-3 mb-3 cursor-pointer hover:border-gray-400 transition-colors"
         >
             <div className="flex justify-between items-center mb-3">
-        <span className="text-sm font-bold uppercase tracking-wide">
-          {MONTHS[data.month - 1]} {data.year}
-        </span>
+                <div className="flex items-center gap-2">
+                    <span className="text-sm font-bold uppercase tracking-wide">
+                        {MONTHS[data.month - 1]} {data.year}
+                    </span>
+                    {isPending && (
+                        <span className="text-xs font-semibold bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded">
+                            estimado
+                        </span>
+                    )}
+                </div>
                 <span className="text-lg font-bold text-red-600">
-          ${data.total.toLocaleString('es-AR', { minimumFractionDigits: 0 })}
-        </span>
+                    {isPending ? '~' : ''}${data.total.toLocaleString('es-AR', { minimumFractionDigits: 0 })}
+                </span>
             </div>
             <div className="border-t border-gray-100 pt-2 flex flex-col gap-1">
                 {sortedCards.map(c => (
                     <div key={c.card_id} className="flex justify-between text-xs">
                         <span className="text-gray-600">{c.card_name}</span>
                         <span className="font-semibold">
-              ${c.total.toLocaleString('es-AR', { minimumFractionDigits: 0 })}
-            </span>
+                            {isPending ? '~' : ''}${c.total.toLocaleString('es-AR', { minimumFractionDigits: 0 })}
+                        </span>
                     </div>
                 ))}
                 {emptyCards.map(c => (
@@ -51,6 +59,14 @@ function MonthCard({ data, onClick }) {
                         <span className="text-gray-300">$0</span>
                     </div>
                 ))}
+                {isPending && data.recurring_total > 0 && (
+                    <div className="flex justify-between text-xs mt-1 pt-1 border-t border-amber-100">
+                        <span className="text-amber-600">🔁 Recurrentes (estimado)</span>
+                        <span className="text-amber-600 font-semibold">
+                            ~${data.recurring_total.toLocaleString('es-AR', { minimumFractionDigits: 0 })}
+                        </span>
+                    </div>
+                )}
             </div>
         </div>
     )

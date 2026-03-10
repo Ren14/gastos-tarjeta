@@ -57,6 +57,8 @@ func main() {
 		r.Put("/exchange-rates/{id}", handlers.UpdateExchangeRate)
 
 		r.Get("/recurring", handlers.GetRecurring)
+		r.Post("/recurring", handlers.CreateRecurring)
+		r.Put("/recurring/{id}", handlers.UpdateRecurring)
 		r.Post("/recurring/generate", handlers.GenerateRecurring)
 
 		r.Put("/expenses/{id}", handlers.UpdateExpense)

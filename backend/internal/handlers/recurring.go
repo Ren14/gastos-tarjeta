@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/go-chi/chi/v5"
+
 	"github.com/Ren14/gastos-tarjeta/internal/db"
 	"github.com/Ren14/gastos-tarjeta/internal/models"
 )
@@ -30,6 +32,64 @@ func GetRecurring(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(items)
+}
+
+func CreateRecurring(w http.ResponseWriter, r *http.Request) {
+	var body struct {
+		CardID     int     `json:"card_id"`
+		CategoryID *int    `json:"category_id"`
+		Merchant   string  `json:"merchant"`
+		AmountUSD  float64 `json:"amount_usd"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	var re models.RecurringExpense
+	err := db.Pool.QueryRow(context.Background(),
+		`INSERT INTO recurring_expenses (card_id, category_id, merchant, amount_usd, active)
+		VALUES ($1, $2, $3, $4, true)
+		RETURNING id, card_id, category_id, merchant, amount_usd, active, created_at`,
+		body.CardID, body.CategoryID, body.Merchant, body.AmountUSD,
+	).Scan(&re.ID, &re.CardID, &re.CategoryID, &re.Merchant, &re.AmountUSD, &re.Active, &re.CreatedAt)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
+	json.NewEncoder(w).Encode(re)
+}
+
+func UpdateRecurring(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+
+	var body struct {
+		CardID     int     `json:"card_id"`
+		CategoryID *int    `json:"category_id"`
+		Merchant   string  `json:"merchant"`
+		AmountUSD  float64 `json:"amount_usd"`
+		Active     bool    `json:"active"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	_, err := db.Pool.Exec(context.Background(),
+		`UPDATE recurring_expenses
+		SET card_id=$1, category_id=$2, merchant=$3, amount_usd=$4, active=$5
+		WHERE id=$6`,
+		body.CardID, body.CategoryID, body.Merchant, body.AmountUSD, body.Active, id,
+	)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func GenerateRecurring(w http.ResponseWriter, r *http.Request) {

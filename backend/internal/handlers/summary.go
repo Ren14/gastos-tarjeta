@@ -209,6 +209,48 @@ func GetProjection(w http.ResponseWriter, r *http.Request) {
 		cardMap[c.ID] = c
 	}
 
+	// Meses en los que ya se generaron recurrentes
+	type MonthKey struct{ Month, Year int }
+	generatedMonths := map[MonthKey]bool{}
+	genRows, err := db.Pool.Query(context.Background(),
+		`SELECT DISTINCT EXTRACT(MONTH FROM purchase_date)::int, EXTRACT(YEAR FROM purchase_date)::int
+		FROM expenses WHERE recurring_id IS NOT NULL`)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer genRows.Close()
+	for genRows.Next() {
+		var m, y int
+		genRows.Scan(&m, &y)
+		generatedMonths[MonthKey{m, y}] = true
+	}
+
+	// Recurrentes activos
+	type RecurringItem struct {
+		CardID    int
+		AmountUSD float64
+	}
+	recurringItems := []RecurringItem{}
+	recRows, err := db.Pool.Query(context.Background(),
+		"SELECT card_id, amount_usd FROM recurring_expenses WHERE active = true")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer recRows.Close()
+	for recRows.Next() {
+		var ri RecurringItem
+		recRows.Scan(&ri.CardID, &ri.AmountUSD)
+		recurringItems = append(recurringItems, ri)
+	}
+
+	// Cotización más reciente disponible como fallback
+	var latestRate float64
+	db.Pool.QueryRow(context.Background(),
+		"SELECT usd_to_ars FROM exchange_rate_history ORDER BY year DESC, month DESC LIMIT 1",
+	).Scan(&latestRate)
+
 	// Traemos todos los gastos
 	rows, err := db.Pool.Query(context.Background(),
 		"SELECT total_amount, installments, purchase_date, card_id FROM expenses")
@@ -220,11 +262,13 @@ func GetProjection(w http.ResponseWriter, r *http.Request) {
 
 	// Estructura: mes -> card_id -> total
 	type MonthData struct {
-		Month   int                  `json:"month"`
-		Year    int                  `json:"year"`
-		Total   float64              `json:"total"`
-		ByCard  []models.CardSummary `json:"by_card"`
-		HasData bool                 `json:"has_data"`
+		Month               int                  `json:"month"`
+		Year                int                  `json:"year"`
+		Total               float64              `json:"total"`
+		ByCard              []models.CardSummary `json:"by_card"`
+		HasData             bool                 `json:"has_data"`
+		HasPendingRecurring bool                 `json:"has_pending_recurring"`
+		RecurringTotal      float64              `json:"recurring_total"`
 	}
 
 	now := time.Now()
@@ -255,6 +299,21 @@ func GetProjection(w http.ResponseWriter, r *http.Request) {
 
 	result := []MonthData{}
 	for i, targetMonth := range monthDates {
+		key := MonthKey{int(targetMonth.Month()), targetMonth.Year()}
+		hasPending := len(recurringItems) > 0 && !generatedMonths[key] && latestRate > 0
+		recurringTotal := 0.0
+
+		// Sumamos estimación de recurrentes si aún no fueron generados
+		if hasPending {
+			for _, ri := range recurringItems {
+				if _, ok := cardMap[ri.CardID]; ok {
+					amt := ri.AmountUSD * latestRate
+					monthTotals[i][ri.CardID] += amt
+					recurringTotal += amt
+				}
+			}
+		}
+
 		byCard := []models.CardSummary{}
 		total := 0.0
 		hasData := false
@@ -274,11 +333,13 @@ func GetProjection(w http.ResponseWriter, r *http.Request) {
 		}
 
 		result = append(result, MonthData{
-			Month:   int(targetMonth.Month()),
-			Year:    targetMonth.Year(),
-			Total:   total,
-			ByCard:  byCard,
-			HasData: hasData,
+			Month:               int(targetMonth.Month()),
+			Year:                targetMonth.Year(),
+			Total:               total,
+			ByCard:              byCard,
+			HasData:             hasData,
+			HasPendingRecurring: hasPending,
+			RecurringTotal:      recurringTotal,
 		})
 	}
 

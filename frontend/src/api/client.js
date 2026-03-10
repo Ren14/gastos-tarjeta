@@ -45,6 +45,8 @@ export const api = {
 
     // Recurring
     getRecurring: () => request('/recurring'),
+    createRecurring: (data) => request('/recurring', {method: 'POST', body: JSON.stringify(data)}),
+    updateRecurring: (id, data) => request(`/recurring/${id}`, {method: 'PUT', body: JSON.stringify(data)}),
     generateRecurring: (month, year) => request('/recurring/generate', {
         method: 'POST',
         body: JSON.stringify({month, year})

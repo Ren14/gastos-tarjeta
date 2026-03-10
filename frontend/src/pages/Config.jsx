@@ -217,6 +217,237 @@ function CardsSection() {
     )
 }
 
+const EMPTY_RECURRING = { merchant: '', card_id: '', category_id: '', amount_usd: '' }
+
+function RecurringForm({ form, setForm, cards, categories }) {
+    const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
+    return (
+        <>
+            <div>
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Comercio</label>
+                <input value={form.merchant} onChange={e => set('merchant', e.target.value)}
+                       placeholder="Netflix"
+                       className="w-full mt-1 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-gray-900 outline-none" />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+                <div>
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Tarjeta</label>
+                    <select value={form.card_id} onChange={e => set('card_id', e.target.value)}
+                            className="w-full mt-1 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-gray-900 outline-none">
+                        <option value="">— Seleccionar —</option>
+                        {cards.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                    </select>
+                </div>
+                <div>
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Monto USD</label>
+                    <input type="number" value={form.amount_usd} onChange={e => set('amount_usd', e.target.value)}
+                           placeholder="9.99"
+                           className="w-full mt-1 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-gray-900 outline-none" />
+                </div>
+            </div>
+            <div>
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Categoría (opcional)</label>
+                <select value={form.category_id} onChange={e => set('category_id', e.target.value)}
+                        className="w-full mt-1 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-gray-900 outline-none">
+                    <option value="">Sin categoría</option>
+                    {categories.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
+                </select>
+            </div>
+        </>
+    )
+}
+
+function RecurringSection({ recurring, cards, categories, onRefresh }) {
+    const [editingId, setEditingId] = useState(null)
+    const [editForm, setEditForm] = useState(null)
+    const [adding, setAdding] = useState(false)
+    const [newItem, setNewItem] = useState(EMPTY_RECURRING)
+    const [confirmDeactivate, setConfirmDeactivate] = useState(null)
+    const [loading, setLoading] = useState(false)
+    const [msg, setMsg] = useState(null)
+
+    function startEdit(item) {
+        setEditingId(item.id)
+        setEditForm({
+            merchant: item.merchant,
+            card_id: item.card_id,
+            category_id: item.category_id ?? '',
+            amount_usd: item.amount_usd,
+        })
+        setAdding(false)
+        setConfirmDeactivate(null)
+    }
+
+    async function handleSaveEdit() {
+        setLoading(true)
+        setMsg(null)
+        try {
+            await api.updateRecurring(editingId, {
+                merchant: editForm.merchant,
+                card_id: Number(editForm.card_id),
+                category_id: editForm.category_id ? Number(editForm.category_id) : null,
+                amount_usd: parseFloat(editForm.amount_usd),
+                active: true,
+            })
+            setEditingId(null)
+            setMsg({ type: 'success', text: 'Recurrente actualizado' })
+            onRefresh()
+        } catch {
+            setMsg({ type: 'error', text: 'Error al guardar' })
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    async function handleDeactivate(item) {
+        if (confirmDeactivate !== item.id) {
+            setConfirmDeactivate(item.id)
+            return
+        }
+        setLoading(true)
+        try {
+            await api.updateRecurring(item.id, {
+                merchant: item.merchant,
+                card_id: item.card_id,
+                category_id: item.category_id ?? null,
+                amount_usd: item.amount_usd,
+                active: false,
+            })
+            setEditingId(null)
+            setConfirmDeactivate(null)
+            setMsg({ type: 'success', text: 'Recurrente desactivado' })
+            onRefresh()
+        } catch {
+            setMsg({ type: 'error', text: 'Error al desactivar' })
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    async function handleAdd() {
+        setLoading(true)
+        setMsg(null)
+        try {
+            await api.createRecurring({
+                merchant: newItem.merchant,
+                card_id: Number(newItem.card_id),
+                category_id: newItem.category_id ? Number(newItem.category_id) : null,
+                amount_usd: parseFloat(newItem.amount_usd),
+            })
+            setNewItem(EMPTY_RECURRING)
+            setAdding(false)
+            setMsg({ type: 'success', text: 'Recurrente creado' })
+            onRefresh()
+        } catch {
+            setMsg({ type: 'error', text: 'Error al crear recurrente' })
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    const canAdd = newItem.merchant && newItem.card_id && newItem.amount_usd
+
+    return (
+        <div>
+            <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Recurrentes</h2>
+
+            <div className="bg-white border border-gray-200 rounded-xl overflow-hidden mb-3">
+                {recurring.length === 0 && (
+                    <p className="text-xs text-gray-400 text-center py-4">No hay gastos recurrentes activos</p>
+                )}
+                {recurring.map((item, i) => {
+                    const card = cards.find(c => c.id === item.card_id)
+                    const cat = categories.find(c => c.id === item.category_id)
+                    return (
+                        <div key={item.id} className={i < recurring.length - 1 || editingId === item.id ? 'border-b border-gray-100' : ''}>
+                            <div className="flex items-center justify-between px-4 py-3">
+                                <div className="flex items-center gap-3">
+                                    <span className="text-base leading-none">{cat?.icon ?? '🔁'}</span>
+                                    <div>
+                                        <p className="text-sm font-semibold text-gray-900">{item.merchant}</p>
+                                        <p className="text-xs text-gray-400">{card?.name ?? '—'} · USD {item.amount_usd}</p>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => editingId === item.id ? setEditingId(null) : startEdit(item)}
+                                    className="text-xs font-bold text-gray-500 hover:text-gray-900 px-2 py-1"
+                                >
+                                    {editingId === item.id ? 'Cancelar' : 'Editar'}
+                                </button>
+                            </div>
+
+                            {editingId === item.id && (
+                                <div className="px-4 pb-4 flex flex-col gap-3 border-t border-gray-100 pt-3">
+                                    <RecurringForm form={editForm} setForm={setEditForm} cards={cards} categories={categories} />
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <button
+                                            onClick={() => handleDeactivate(item)}
+                                            disabled={loading}
+                                            className={`py-2 rounded-xl text-xs font-bold border-2 transition-colors disabled:opacity-50 ${
+                                                confirmDeactivate === item.id
+                                                    ? 'bg-red-600 text-white border-red-600'
+                                                    : 'text-red-500 border-red-200 hover:border-red-400 bg-white'
+                                            }`}
+                                        >
+                                            {confirmDeactivate === item.id ? 'Confirmar' : 'Desactivar'}
+                                        </button>
+                                        <button
+                                            onClick={handleSaveEdit}
+                                            disabled={loading || !editForm?.merchant || !editForm?.card_id}
+                                            className="py-2 bg-gray-900 text-white rounded-xl text-xs font-bold disabled:opacity-50"
+                                        >
+                                            {loading ? 'Guardando...' : 'Guardar'}
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )
+                })}
+            </div>
+
+            {adding ? (
+                <div className="bg-white border border-gray-200 rounded-xl px-4 py-4 mb-3 flex flex-col gap-3">
+                    <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">Nuevo recurrente</p>
+                    <RecurringForm form={newItem} setForm={setNewItem} cards={cards} categories={categories} />
+                    <div className="grid grid-cols-2 gap-3">
+                        <button
+                            onClick={() => { setAdding(false); setNewItem(EMPTY_RECURRING) }}
+                            className="py-2 border-2 border-gray-200 rounded-xl text-xs font-bold text-gray-500 hover:border-gray-400"
+                        >
+                            Cancelar
+                        </button>
+                        <button
+                            onClick={handleAdd}
+                            disabled={loading || !canAdd}
+                            className="py-2 bg-gray-900 text-white rounded-xl text-xs font-bold disabled:opacity-50"
+                        >
+                            {loading ? 'Guardando...' : 'Crear'}
+                        </button>
+                    </div>
+                </div>
+            ) : (
+                <button
+                    onClick={() => { setAdding(true); setEditingId(null) }}
+                    className="w-full py-2 border-2 border-dashed border-gray-200 rounded-xl text-sm font-bold text-gray-400 hover:border-gray-400 hover:text-gray-600 transition-colors mb-3"
+                >
+                    + Agregar recurrente
+                </button>
+            )}
+
+            {msg && (
+                <p className={`text-xs px-3 py-2 rounded-lg border ${
+                    msg.type === 'success'
+                        ? 'bg-green-50 border-green-200 text-green-700'
+                        : 'bg-red-50 border-red-200 text-red-500'
+                }`}>
+                    {msg.text}
+                </p>
+            )}
+        </div>
+    )
+}
+
 export function Config() {
     const now = new Date()
     const [month, setMonth] = useState(now.getMonth() + 1)
@@ -225,6 +456,8 @@ export function Config() {
     const [notes, setNotes] = useState('')
     const [rates, setRates] = useState([])
     const [recurring, setRecurring] = useState([])
+    const [cards, setCards] = useState([])
+    const [categories, setCategories] = useState([])
     const [loading, setLoading] = useState(false)
     const [apiLoading, setApiLoading] = useState(false)
     const [apiError, setApiError] = useState(null)
@@ -234,7 +467,13 @@ export function Config() {
     useEffect(() => {
         api.getExchangeRates().then(setRates)
         api.getRecurring().then(setRecurring)
+        api.getCards().then(data => setCards(data.filter(c => c.active)))
+        api.getCategories().then(setCategories)
     }, [])
+
+    function refreshRecurring() {
+        api.getRecurring().then(setRecurring)
+    }
 
     // Cuando cambia mes/año, pre-cargar cotización guardada si existe
     useEffect(() => {
@@ -310,6 +549,14 @@ export function Config() {
 
             {/* Tarjetas */}
             <CardsSection />
+
+            {/* Recurrentes */}
+            <RecurringSection
+                recurring={recurring}
+                cards={cards}
+                categories={categories}
+                onRefresh={refreshRecurring}
+            />
 
             {/* Cotización */}
             <div>
