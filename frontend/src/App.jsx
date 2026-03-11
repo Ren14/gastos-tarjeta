@@ -1,13 +1,11 @@
 import { useState } from 'react'
 import { LoadExpense } from './pages/ExpenseForm'
 import { Dashboard } from './pages/Dashboard'
-import { Projection } from './pages/Projection'
 import { CardsPage, RecurringPage, CotizacionPage, CategoriesPage } from './pages/Config'
 
 const NAV_ITEMS = [
     { id: 'load',       label: '+ Cargar gasto' },
-    { id: 'dashboard',  label: '📊 Dashboard' },
-    { id: 'projection', label: '🔮 Futuro' },
+    { id: 'dashboard',  label: '📊 Resumen' },
     { id: 'cards',      label: '💳 Tarjetas' },
     { id: 'recurring',  label: '🔁 Recurrentes' },
     { id: 'categories', label: '🗂️ Categorías' },
@@ -21,12 +19,6 @@ export default function App() {
     const [activeTab, setActiveTab] = useState('dashboard')
     const [drawerOpen, setDrawerOpen] = useState(false)
     const [savedCount, setSavedCount] = useState(0)
-    const [dashYear, setDashYear] = useState(null)
-
-    function navigateToDashboard(month, year) {
-        setDashYear(year)
-        setActiveTab('dashboard')
-    }
 
     function navigate(tab) {
         setActiveTab(tab)
@@ -112,10 +104,7 @@ export default function App() {
                         </div>
                     )}
                     {activeTab === 'dashboard' && (
-                        <Dashboard key={savedCount} initialYear={dashYear} />
-                    )}
-                    {activeTab === 'projection' && (
-                        <Projection onNavigateToDashboard={navigateToDashboard} />
+                        <Dashboard key={savedCount} />
                     )}
                     {activeTab === 'cards'      && <div className="md:max-w-lg"><CardsPage /></div>}
                     {activeTab === 'recurring'  && <div className="md:max-w-lg"><RecurringPage /></div>}
