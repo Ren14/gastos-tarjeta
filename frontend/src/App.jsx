@@ -21,11 +21,9 @@ export default function App() {
     const [activeTab, setActiveTab] = useState('dashboard')
     const [drawerOpen, setDrawerOpen] = useState(false)
     const [savedCount, setSavedCount] = useState(0)
-    const [dashMonth, setDashMonth] = useState(null)
     const [dashYear, setDashYear] = useState(null)
 
     function navigateToDashboard(month, year) {
-        setDashMonth(month)
         setDashYear(year)
         setActiveTab('dashboard')
     }
@@ -114,7 +112,7 @@ export default function App() {
                         </div>
                     )}
                     {activeTab === 'dashboard' && (
-                        <Dashboard key={savedCount} initialMonth={dashMonth} initialYear={dashYear} />
+                        <Dashboard key={savedCount} initialYear={dashYear} />
                     )}
                     {activeTab === 'projection' && (
                         <Projection onNavigateToDashboard={navigateToDashboard} />
