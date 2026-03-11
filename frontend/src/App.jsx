@@ -2,17 +2,24 @@ import { useState } from 'react'
 import { LoadExpense } from './pages/ExpenseForm'
 import { Dashboard } from './pages/Dashboard'
 import { Projection } from './pages/Projection'
-import { Config } from './pages/Config'
+import { CardsPage, RecurringPage, CotizacionPage, CategoriesPage } from './pages/Config'
 
-const TABS = [
-    { id: 'load',       label: '+ Load' },
+const NAV_ITEMS = [
+    { id: 'load',       label: '+ Cargar gasto' },
     { id: 'dashboard',  label: '📊 Dashboard' },
     { id: 'projection', label: '🔮 Futuro' },
-    { id: 'config',     label: '⚙️' },
+    { id: 'cards',      label: '💳 Tarjetas' },
+    { id: 'recurring',  label: '🔁 Recurrentes' },
+    { id: 'categories', label: '🗂️ Categorías' },
+    { id: 'cotizacion', label: '💵 Cotización USD' },
 ]
 
+// Pages that should stay narrow (forms / config)
+const NARROW_PAGES = new Set(['load', 'cards', 'recurring', 'categories', 'cotizacion'])
+
 export default function App() {
-    const [activeTab, setActiveTab] = useState('load')
+    const [activeTab, setActiveTab] = useState('dashboard')
+    const [drawerOpen, setDrawerOpen] = useState(false)
     const [savedCount, setSavedCount] = useState(0)
     const [dashMonth, setDashMonth] = useState(null)
     const [dashYear, setDashYear] = useState(null)
@@ -23,39 +30,100 @@ export default function App() {
         setActiveTab('dashboard')
     }
 
+    function navigate(tab) {
+        setActiveTab(tab)
+        setDrawerOpen(false)
+    }
+
+    const activeLabel = NAV_ITEMS.find(i => i.id === activeTab)?.label ?? ''
+
     return (
-        <div className="min-h-screen bg-stone-100">
-            <div className="max-w-md mx-auto px-4 pt-8 pb-24">
+        <div className="min-h-screen bg-stone-100 md:flex">
 
-                <div className="flex bg-white border border-gray-200 rounded-xl overflow-hidden mb-6">
-                    {TABS.map(tab => (
-                        <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-                                className={`flex-1 py-3 text-sm font-bold transition-colors
-                ${activeTab === tab.id
-                                    ? 'bg-gray-900 text-white'
-                                    : 'text-gray-400 hover:text-gray-700'}`}>
-                            {tab.label}
-                        </button>
-                    ))}
+            {/* Mobile overlay — hidden on md+ */}
+            <div
+                className={`fixed inset-0 bg-black/40 z-40 md:hidden transition-opacity duration-300 ${
+                    drawerOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+                }`}
+                onClick={() => setDrawerOpen(false)}
+            />
+
+            {/* Sidebar — drawer on mobile, permanent on md+ */}
+            <aside className={[
+                'fixed md:sticky md:top-0',
+                'top-0 left-0 h-full md:h-screen',
+                'w-60 xl:w-64 flex-shrink-0',
+                'bg-white border-r border-gray-200',
+                'z-50 md:z-auto shadow-2xl md:shadow-none',
+                'flex flex-col',
+                'transition-transform duration-300 ease-in-out',
+                drawerOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0',
+            ].join(' ')}>
+                <div className="px-4 xl:px-5 pt-8 pb-6 flex-1 overflow-y-auto">
+                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-5">
+                        Gastos
+                    </p>
+                    <nav className="flex flex-col gap-1">
+                        {NAV_ITEMS.map(item => (
+                            <button
+                                key={item.id}
+                                onClick={() => navigate(item.id)}
+                                className={`text-left px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors ${
+                                    activeTab === item.id
+                                        ? 'bg-gray-900 text-white'
+                                        : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
+                                }`}
+                            >
+                                {item.label}
+                            </button>
+                        ))}
+                    </nav>
                 </div>
+            </aside>
 
-                {activeTab === 'load' && (
-                    <LoadExpense onSaved={() => {
-                        setSavedCount(n => n + 1)
-                        setActiveTab('dashboard')
-                    }} />
-                )}
-                {activeTab === 'dashboard' && (
-                    <Dashboard
-                        key={savedCount}
-                        initialMonth={dashMonth}
-                        initialYear={dashYear}
-                    />
-                )}
-                {activeTab === 'projection' && (
-                    <Projection onNavigateToDashboard={navigateToDashboard} />
-                )}
-                {activeTab === 'config' && <Config />}
+            {/* Main area */}
+            <div className="flex-1 min-w-0 overflow-x-hidden">
+                <div className={`px-4 md:px-8 xl:px-10 2xl:px-14 pt-5 md:pt-8 pb-24 ${
+                    NARROW_PAGES.has(activeTab) ? 'max-w-md mx-auto md:max-w-none md:mx-0' : ''
+                }`}>
+
+                    {/* Top bar — hamburger + label on mobile only */}
+                    <div className="flex items-center gap-3 mb-6 md:hidden">
+                        <button
+                            onClick={() => setDrawerOpen(true)}
+                            className="text-2xl text-gray-700 hover:text-gray-900 leading-none w-9 h-9 flex items-center justify-center rounded-lg hover:bg-gray-200 transition-colors flex-shrink-0"
+                            aria-label="Abrir menú"
+                        >
+                            ☰
+                        </button>
+                        <span className="text-sm font-bold text-gray-700 tracking-wide">{activeLabel}</span>
+                    </div>
+
+                    {/* Page title — desktop only */}
+                    <h1 className="hidden md:block text-xl font-bold text-gray-900 mb-6">
+                        {activeLabel}
+                    </h1>
+
+                    {/* Page content */}
+                    {activeTab === 'load' && (
+                        <div className="md:max-w-lg">
+                            <LoadExpense onSaved={() => {
+                                setSavedCount(n => n + 1)
+                                setActiveTab('dashboard')
+                            }} />
+                        </div>
+                    )}
+                    {activeTab === 'dashboard' && (
+                        <Dashboard key={savedCount} initialMonth={dashMonth} initialYear={dashYear} />
+                    )}
+                    {activeTab === 'projection' && (
+                        <Projection onNavigateToDashboard={navigateToDashboard} />
+                    )}
+                    {activeTab === 'cards'      && <div className="md:max-w-lg"><CardsPage /></div>}
+                    {activeTab === 'recurring'  && <div className="md:max-w-lg"><RecurringPage /></div>}
+                    {activeTab === 'categories' && <div className="md:max-w-lg"><CategoriesPage /></div>}
+                    {activeTab === 'cotizacion' && <div className="md:max-w-lg"><CotizacionPage /></div>}
+                </div>
             </div>
         </div>
     )

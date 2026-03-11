@@ -1,15 +1,16 @@
 import { useState, useEffect } from 'react'
 import { api } from '../api/client'
 
-export function useProjection(months = 6) {
+export function useProjection(months = 6, startMonth = null, startYear = null) {
     const [projection, setProjection] = useState([])
     const [loading, setLoading] = useState(true)
 
     useEffect(() => {
-        api.getProjection(months)
+        setLoading(true)
+        api.getProjection(months, startMonth, startYear)
             .then(setProjection)
             .finally(() => setLoading(false))
-    }, [months])
+    }, [months, startMonth, startYear])
 
     return { projection, loading }
 }

@@ -63,8 +63,9 @@ type MonthlyExpenseItem struct {
 	CardName          string  `json:"card_name"`
 	CategoryID        *int    `json:"category_id"`
 	IsRecurring       bool    `json:"is_recurring"`
-	PurchaseDate      string  `json:"purchase_date"` // ← agregar
-	TotalAmount       float64 `json:"total_amount"`  // ← agregar
+	RecurringID       *int    `json:"recurring_id"`
+	PurchaseDate      string  `json:"purchase_date"`
+	TotalAmount       float64 `json:"total_amount"`
 }
 
 type MonthlySummary struct {

@@ -42,6 +42,9 @@ func main() {
 		r.Put("/cards/{id}", handlers.UpdateCard)
 
 		r.Get("/categories", handlers.GetCategories)
+		r.Post("/categories", handlers.CreateCategory)
+		r.Put("/categories/{id}", handlers.UpdateCategory)
+		r.Delete("/categories/{id}", handlers.DeleteCategory)
 
 		r.Get("/expenses", handlers.GetExpenses)
 		r.Post("/expenses", handlers.CreateExpense)
@@ -53,6 +56,7 @@ func main() {
 		r.Get("/summary/projection", handlers.GetProjection)
 
 		r.Get("/exchange-rates", handlers.GetExchangeRates)
+		r.Get("/exchange-rates/closest", handlers.GetClosestExchangeRate)
 		r.Post("/exchange-rates", handlers.CreateExchangeRate)
 		r.Put("/exchange-rates/{id}", handlers.UpdateExchangeRate)
 

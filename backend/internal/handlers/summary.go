@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
+	"sort"
 	"strconv"
 	"time"
 
@@ -96,7 +97,8 @@ func GetMonthlySummary(w http.ResponseWriter, r *http.Request) {
 			CardName:          cardName,
 			CategoryID:        categoryID,
 			IsRecurring:       recurringID != nil,
-			PurchaseDate:      purchaseDate.Format("2006-01-02"), // ← agregar
+			RecurringID:       recurringID,
+			PurchaseDate:      purchaseDate.Format("2006-01-02"),
 			TotalAmount:       totalAmount,
 		})
 		total += installmentAmount
@@ -251,9 +253,9 @@ func GetProjection(w http.ResponseWriter, r *http.Request) {
 		"SELECT usd_to_ars FROM exchange_rate_history ORDER BY year DESC, month DESC LIMIT 1",
 	).Scan(&latestRate)
 
-	// Traemos todos los gastos
+	// Traemos todos los gastos; distinguimos recurrentes de regulares
 	rows, err := db.Pool.Query(context.Background(),
-		"SELECT total_amount, installments, purchase_date, card_id FROM expenses")
+		"SELECT total_amount, installments, purchase_date, card_id, recurring_id IS NOT NULL FROM expenses")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -272,11 +274,20 @@ func GetProjection(w http.ResponseWriter, r *http.Request) {
 	}
 
 	now := time.Now()
-	// Inicializamos los próximos N meses
+	startMonth, _ := strconv.Atoi(r.URL.Query().Get("start_month"))
+	startYear, _ := strconv.Atoi(r.URL.Query().Get("start_year"))
+	var origin time.Time
+	if startMonth > 0 && startYear > 0 {
+		origin = time.Date(startYear, time.Month(startMonth), 1, 0, 0, 0, 0, time.UTC)
+	} else {
+		origin = time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC)
+	}
+
+	// Inicializamos los N meses a partir de origin
 	monthTotals := make([]map[int]float64, months)
 	monthDates := make([]time.Time, months)
 	for i := 0; i < months; i++ {
-		monthDates[i] = time.Date(now.Year(), now.Month()+time.Month(i), 1, 0, 0, 0, 0, time.UTC)
+		monthDates[i] = time.Date(origin.Year(), origin.Month()+time.Month(i), 1, 0, 0, 0, 0, time.UTC)
 		monthTotals[i] = map[int]float64{}
 	}
 
@@ -284,18 +295,40 @@ func GetProjection(w http.ResponseWriter, r *http.Request) {
 		var totalAmount float64
 		var installments, cardID int
 		var purchaseDate time.Time
-		rows.Scan(&totalAmount, &installments, &purchaseDate, &cardID)
+		var isRecurring bool
+		rows.Scan(&totalAmount, &installments, &purchaseDate, &cardID, &isRecurring)
 
-		firstImpact := getFirstImpactMonth(purchaseDate.Format("2006-01-02"))
-
-		for i, targetMonth := range monthDates {
-			lastImpact := time.Date(firstImpact.Year(), firstImpact.Month()+time.Month(installments)-1, 1, 0, 0, 0, 0, time.UTC)
-			if targetMonth.Before(firstImpact) || targetMonth.After(lastImpact) {
-				continue
+		if isRecurring {
+			// Generated recurring expenses impact exactly the month of their purchase_date.
+			// Do NOT run them through getFirstImpactMonth — that would shift them one month forward.
+			pdMonth := int(purchaseDate.Month())
+			pdYear := purchaseDate.Year()
+			for i, targetMonth := range monthDates {
+				if int(targetMonth.Month()) == pdMonth && targetMonth.Year() == pdYear {
+					monthTotals[i][cardID] += totalAmount
+					break
+				}
 			}
-			monthTotals[i][cardID] += totalAmount / float64(installments)
+		} else {
+			firstImpact := getFirstImpactMonth(purchaseDate.Format("2006-01-02"))
+			for i, targetMonth := range monthDates {
+				lastImpact := time.Date(firstImpact.Year(), firstImpact.Month()+time.Month(installments)-1, 1, 0, 0, 0, 0, time.UTC)
+				if targetMonth.Before(firstImpact) || targetMonth.After(lastImpact) {
+					continue
+				}
+				monthTotals[i][cardID] += totalAmount / float64(installments)
+			}
 		}
 	}
+
+	// Stable card order for consistent rendering
+	cardOrder := make([]CardInfo, 0, len(cardMap))
+	for _, info := range cardMap {
+		cardOrder = append(cardOrder, info)
+	}
+	sort.Slice(cardOrder, func(i, j int) bool {
+		return cardOrder[i].Name < cardOrder[j].Name
+	})
 
 	result := []MonthData{}
 	for i, targetMonth := range monthDates {
@@ -318,10 +351,10 @@ func GetProjection(w http.ResponseWriter, r *http.Request) {
 		total := 0.0
 		hasData := false
 
-		for id, info := range cardMap {
-			cardTotal := monthTotals[i][id]
+		for _, info := range cardOrder {
+			cardTotal := monthTotals[i][info.ID]
 			byCard = append(byCard, models.CardSummary{
-				CardID:   id,
+				CardID:   info.ID,
 				CardName: info.Name,
 				ColorHex: info.ColorHex,
 				Total:    cardTotal,

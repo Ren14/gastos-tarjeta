@@ -55,6 +55,41 @@ func CreateExchangeRate(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(rate)
 }
 
+func GetClosestExchangeRate(w http.ResponseWriter, r *http.Request) {
+	month, _ := strconv.Atoi(r.URL.Query().Get("month"))
+	year, _ := strconv.Atoi(r.URL.Query().Get("year"))
+
+	if month == 0 || year == 0 {
+		http.Error(w, "month and year are required", http.StatusBadRequest)
+		return
+	}
+
+	var rate models.ExchangeRate
+	// Most recent rate on or before the given month/year
+	err := db.Pool.QueryRow(context.Background(),
+		`SELECT id, month, year, usd_to_ars, COALESCE(notes,''), created_at
+		FROM exchange_rate_history
+		WHERE year < $2 OR (year = $2 AND month <= $1)
+		ORDER BY year DESC, month DESC LIMIT 1`,
+		month, year,
+	).Scan(&rate.ID, &rate.Month, &rate.Year, &rate.UsdToArs, &rate.Notes, &rate.CreatedAt)
+
+	if err != nil {
+		// Fallback: oldest available rate
+		err = db.Pool.QueryRow(context.Background(),
+			`SELECT id, month, year, usd_to_ars, COALESCE(notes,''), created_at
+			FROM exchange_rate_history ORDER BY year ASC, month ASC LIMIT 1`,
+		).Scan(&rate.ID, &rate.Month, &rate.Year, &rate.UsdToArs, &rate.Notes, &rate.CreatedAt)
+		if err != nil {
+			http.Error(w, "no exchange rates found", http.StatusNotFound)
+			return
+		}
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(rate)
+}
+
 func UpdateExchangeRate(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(chi.URLParam(r, "id"))
 	if err != nil {

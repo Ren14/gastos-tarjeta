@@ -22,6 +22,9 @@ export const api = {
 
     // Categories
     getCategories: () => request('/categories'),
+    createCategory: (data) => request('/categories', {method: 'POST', body: JSON.stringify(data)}),
+    updateCategory: (id, data) => request(`/categories/${id}`, {method: 'PUT', body: JSON.stringify(data)}),
+    deleteCategory: (id) => request(`/categories/${id}`, {method: 'DELETE'}),
 
     // Expenses
     getExpenses: (cardId) => request(`/expenses${cardId ? `?card_id=${cardId}` : ''}`),
@@ -36,10 +39,16 @@ export const api = {
     },
     getSummaryByCard: (month, year) =>
         request(`/summary/by-card?month=${month}&year=${year}`),
-    getProjection: (months = 6) => request(`/summary/projection?months=${months}`),
+    getProjection: (months = 6, startMonth = null, startYear = null) => {
+        const params = new URLSearchParams({ months })
+        if (startMonth) params.append('start_month', startMonth)
+        if (startYear) params.append('start_year', startYear)
+        return request(`/summary/projection?${params}`)
+    },
 
     // Exchange rates
     getExchangeRates: () => request('/exchange-rates'),
+    getClosestExchangeRate: (month, year) => request(`/exchange-rates/closest?month=${month}&year=${year}`),
     createExchangeRate: (data) => request('/exchange-rates', {method: 'POST', body: JSON.stringify(data)}),
     updateExchangeRate: (id, data) => request(`/exchange-rates/${id}`, {method: 'PUT', body: JSON.stringify(data)}),
 
