@@ -93,4 +93,14 @@ export const api = {
     saveCashflowEntry: (data) => request('/cashflow/entries', { method: 'POST', body: JSON.stringify(data) }),
     deleteCashflowEntry: (id) => request(`/cashflow/entries/${id}`, { method: 'DELETE' }),
     getCardTotals: (year) => request(`/cashflow/card-totals?year=${year}`),
+
+    truncateDB: async () => {
+        const res = await fetch(`${BASE_URL}/admin/truncate-db`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'X-Confirm-Truncate': 'true' },
+        })
+        const text = await res.text()
+        if (!res.ok) throw new Error(text || `HTTP ${res.status}`)
+        return JSON.parse(text)
+    },
 }

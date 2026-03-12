@@ -238,6 +238,38 @@ func sqlFormat(v interface{}) string {
 	}
 }
 
+// TruncateDB deletes all rows from every table and resets sequences.
+// Requires header X-Confirm-Truncate: true.
+func TruncateDB(w http.ResponseWriter, r *http.Request) {
+	if r.Header.Get("X-Confirm-Truncate") != "true" {
+		http.Error(w, "Missing header X-Confirm-Truncate: true", http.StatusBadRequest)
+		return
+	}
+
+	tx, err := db.Pool.Begin(r.Context())
+	if err != nil {
+		http.Error(w, "Failed to begin transaction: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer tx.Rollback(r.Context())
+
+	_, err = tx.Exec(r.Context(),
+		`TRUNCATE cashflow_entries, expenses, recurring_expenses, `+
+			`exchange_rate_history, cashflow_categories, categories, cards `+
+			`RESTART IDENTITY CASCADE`)
+	if err != nil {
+		http.Error(w, "Truncate failed: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if err := tx.Commit(r.Context()); err != nil {
+		http.Error(w, "Commit failed: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	writeAdminJSON(w, `{"success":true,"message":"All tables truncated successfully"}`)
+}
+
 // ── Fallback SQL executor ─────────────────────────────────────────────────────
 
 func executeSQL(ctx context.Context, content string) error {
