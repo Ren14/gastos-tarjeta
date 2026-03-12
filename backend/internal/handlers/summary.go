@@ -330,10 +330,13 @@ func GetProjection(w http.ResponseWriter, r *http.Request) {
 		return cardOrder[i].Name < cardOrder[j].Name
 	})
 
+	currentMonthStart := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC)
+
 	result := []MonthData{}
 	for i, targetMonth := range monthDates {
 		key := MonthKey{int(targetMonth.Month()), targetMonth.Year()}
-		hasPending := len(recurringItems) > 0 && !generatedMonths[key] && latestRate > 0
+		isPast := targetMonth.Before(currentMonthStart)
+		hasPending := len(recurringItems) > 0 && !generatedMonths[key] && latestRate > 0 && !isPast
 		recurringTotal := 0.0
 
 		// Sumamos estimación de recurrentes si aún no fueron generados

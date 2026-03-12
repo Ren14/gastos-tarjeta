@@ -16,7 +16,7 @@ func GetExpenses(w http.ResponseWriter, r *http.Request) {
 	cardID := r.URL.Query().Get("card_id")
 
 	query := `SELECT id, card_id, category_id, merchant, total_amount, installments,
-		installment_amount, purchase_date, recurring_id, notes, created_at
+		installment_amount, purchase_date, recurring_id, notes, color, created_at
 		FROM expenses`
 	args := []any{}
 
@@ -39,7 +39,7 @@ func GetExpenses(w http.ResponseWriter, r *http.Request) {
 		var purchaseDate time.Time // ← scanear como time.Time
 		if err := rows.Scan(&e.ID, &e.CardID, &e.CategoryID, &e.Merchant,
 			&e.TotalAmount, &e.Installments, &e.InstallmentAmount,
-			&purchaseDate, &e.RecurringID, &e.Notes, &e.CreatedAt); err != nil {
+			&purchaseDate, &e.RecurringID, &e.Notes, &e.Color, &e.CreatedAt); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -114,10 +114,10 @@ func UpdateExpense(w http.ResponseWriter, r *http.Request) {
 
 	_, err = db.Pool.Exec(context.Background(),
 		`UPDATE expenses SET card_id=$1, category_id=$2, merchant=$3,
-		total_amount=$4, installments=$5, purchase_date=$6, notes=$7
-		WHERE id=$8`,
+		total_amount=$4, installments=$5, purchase_date=$6, notes=$7, color=$8
+		WHERE id=$9`,
 		e.CardID, e.CategoryID, e.Merchant,
-		e.TotalAmount, e.Installments, e.PurchaseDate, e.Notes, id,
+		e.TotalAmount, e.Installments, e.PurchaseDate, e.Notes, e.Color, id,
 	)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

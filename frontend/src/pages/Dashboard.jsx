@@ -58,6 +58,13 @@ const W_MERCHANT = 160
 const W_CARD     = 60
 const W_MONTH    = 88
 
+const COLOR_OPTIONS = [
+    { value: null,    dot: 'bg-gray-800' },
+    { value: 'green', dot: 'bg-green-500' },
+    { value: 'blue',  dot: 'bg-blue-500' },
+    { value: 'gray',  dot: 'bg-gray-300' },
+]
+
 // ── Summary matrix (top section) ─────────────────────────────────────────────
 
 function SummaryMatrix({ projection, projLoading, selectedYear, selectedCardId, currentYear, currentMonth, onCardClick }) {
@@ -333,6 +340,54 @@ export function Dashboard() {
         [categories]
     )
 
+    // ── Inline cell editing ───────────────────────────────────────────
+    const [editingCell, setEditingCell] = useState(null) // { expense, monthIdx }
+    const [editAmount,  setEditAmount]  = useState('')
+    const [editColor,   setEditColor]   = useState(null)
+
+    function startEdit(expense, monthIdx) {
+        setEditingCell({ expense, monthIdx })
+        setEditAmount(String(Math.round(expense.installment_amount)))
+        setEditColor(expense.color ?? null)
+    }
+
+    async function commitEdit() {
+        if (!editingCell) return
+        const { expense } = editingCell
+        setEditingCell(null)
+        const newInstallment = parseFloat(editAmount) || expense.installment_amount
+        const newTotal       = newInstallment * (expense.installments || 1)
+        try {
+            await api.updateExpense(expense.id, {
+                card_id:      expense.card_id,
+                category_id:  expense.category_id,
+                merchant:     expense.merchant,
+                total_amount: newTotal,
+                installments: expense.installments || 1,
+                purchase_date: expense.purchase_date,
+                notes:        expense.notes ?? null,
+                color:        editColor ?? null,
+            })
+            setExpenses(prev => prev.map(ex =>
+                ex.id === expense.id
+                    ? { ...ex, total_amount: newTotal, installment_amount: newInstallment, color: editColor ?? null }
+                    : ex
+            ))
+        } catch {
+            refresh()
+        }
+    }
+
+    function cancelEdit() { setEditingCell(null) }
+
+    function getAmountTextClass(expense, monthIdx) {
+        if (expense.color === 'green') return 'text-green-600 font-medium'
+        if (expense.color === 'blue')  return 'text-blue-600 font-medium'
+        if (expense.color === 'gray')  return 'text-gray-400 font-medium'
+        const isPresto = prestoCategoryId !== null && expense.category_id === prestoCategoryId
+        return isPresto || isPastMonth(monthIdx + 1) ? 'text-gray-400 font-medium' : 'text-gray-800 font-medium'
+    }
+
     if (!cards.length) {
         return <p className="text-center text-gray-400 py-8">Loading…</p>
     }
@@ -474,34 +529,80 @@ export function Dashboard() {
 
                                 {/* Regular expense rows */}
                                 {visibleRegular.map((e, idx) => {
-                                    const amounts  = getYearlyAmounts(e, selectedYear)
-                                    const isEven   = (recurringDefs.length + idx) % 2 === 0
-                                    const base     = isEven ? 'bg-white' : 'bg-gray-50/50'
+                                    const amounts = getYearlyAmounts(e, selectedYear)
+                                    const isEven  = (recurringDefs.length + idx) % 2 === 0
+                                    const base    = isEven ? 'bg-white' : 'bg-gray-50/50'
                                     const isPresto = prestoCategoryId !== null && e.category_id === prestoCategoryId
                                     return (
-                                        <tr key={e.id}
-                                            onClick={() => openEdit(e)}
-                                            className="group border-b border-gray-100 last:border-0 cursor-pointer">
-                                            <td className={`sticky z-10 border-r border-gray-100 px-3 py-2 text-xs text-gray-500 whitespace-nowrap tabular-nums ${base} group-hover:bg-gray-100`}
-                                                style={{ left: 0 }}>
+                                        <tr key={e.id} className="group border-b border-gray-100 last:border-0">
+                                            {/* Sticky cells — click opens bottom sheet */}
+                                            <td className={`sticky z-10 border-r border-gray-100 px-3 py-2 text-xs text-gray-500 whitespace-nowrap tabular-nums cursor-pointer ${base} group-hover:bg-gray-100`}
+                                                style={{ left: 0 }}
+                                                onClick={() => openEdit(e)}>
                                                 {fmtDate(e.purchase_date)}
                                             </td>
-                                            <td className={`sticky z-10 border-r border-gray-100 px-3 py-2 text-sm font-medium overflow-hidden ${base} group-hover:bg-gray-100 ${isPresto ? 'text-gray-500' : 'text-gray-800'}`}
-                                                style={{ left: W_DATE, maxWidth: W_MERCHANT }}>
+                                            <td className={`sticky z-10 border-r border-gray-100 px-3 py-2 text-sm font-medium overflow-hidden cursor-pointer ${base} group-hover:bg-gray-100 ${isPresto ? 'text-gray-500' : 'text-gray-800'}`}
+                                                style={{ left: W_DATE, maxWidth: W_MERCHANT }}
+                                                onClick={() => openEdit(e)}>
                                                 <span className="block truncate">{e.merchant}</span>
                                             </td>
-                                            <td className={`sticky z-10 border-r border-gray-100 px-3 py-2 text-xs text-gray-400 overflow-hidden ${base} group-hover:bg-gray-100`}
-                                                style={{ left: W_DATE + W_MERCHANT, maxWidth: W_CARD }}>
+                                            <td className={`sticky z-10 border-r border-gray-100 px-3 py-2 text-xs text-gray-400 overflow-hidden cursor-pointer ${base} group-hover:bg-gray-100`}
+                                                style={{ left: W_DATE + W_MERCHANT, maxWidth: W_CARD }}
+                                                onClick={() => openEdit(e)}>
                                                 <span className="block truncate">{cardLabel}</span>
                                             </td>
-                                            {amounts.map((amount, i) => (
-                                                <td key={i}
-                                                    className={`px-2 py-2 text-right text-sm whitespace-nowrap tabular-nums group-hover:bg-gray-100 ${
-                                                        isCurMonth(i + 1) ? 'bg-blue-50 group-hover:bg-blue-100/50' : isPastMonth(i + 1) ? 'bg-gray-100/60' : ''
-                                                    } ${amount > 0 ? (isPresto || isPastMonth(i + 1) ? 'text-gray-400 font-medium' : 'text-gray-800 font-medium') : ''}`}>
-                                                    {amount > 0 ? `$${fmt(amount)}` : ''}
-                                                </td>
-                                            ))}
+
+                                            {/* Month amount cells — click opens inline editor */}
+                                            {amounts.map((amount, i) => {
+                                                const isEditing = editingCell?.expense?.id === e.id && editingCell?.monthIdx === i
+                                                const bgCls = isCurMonth(i + 1) ? 'bg-blue-50' : isPastMonth(i + 1) ? 'bg-gray-100/60' : ''
+
+                                                if (isEditing) {
+                                                    return (
+                                                        <td key={i}
+                                                            className={`px-2 py-1 whitespace-nowrap align-top ${bgCls}`}
+                                                            style={{ minWidth: W_MONTH }}>
+                                                            <div className="flex flex-col items-end gap-1.5 pt-0.5">
+                                                                <input
+                                                                    autoFocus
+                                                                    type="text"
+                                                                    value={editAmount}
+                                                                    onChange={ev => setEditAmount(ev.target.value)}
+                                                                    onKeyDown={ev => {
+                                                                        if (ev.key === 'Enter') commitEdit()
+                                                                        if (ev.key === 'Escape') cancelEdit()
+                                                                    }}
+                                                                    onBlur={commitEdit}
+                                                                    className="w-full text-right text-sm font-medium outline-none border-b-2 border-blue-400 bg-transparent tabular-nums"
+                                                                    placeholder="0"
+                                                                />
+                                                                <div className="flex gap-1 justify-end pb-0.5">
+                                                                    {COLOR_OPTIONS.map(opt => (
+                                                                        <button key={String(opt.value)}
+                                                                            type="button"
+                                                                            onMouseDown={ev => { ev.preventDefault(); setEditColor(opt.value) }}
+                                                                            className={`w-3.5 h-3.5 rounded-full ${opt.dot} transition-opacity ${editColor === opt.value ? 'ring-2 ring-offset-1 ring-blue-500 opacity-100' : 'opacity-50 hover:opacity-100'}`}
+                                                                        />
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                        </td>
+                                                    )
+                                                }
+
+                                                return (
+                                                    <td key={i}
+                                                        onClick={() => startEdit(e, i)}
+                                                        className={`px-2 py-2 text-right text-sm whitespace-nowrap tabular-nums cursor-pointer group-hover:bg-gray-100 group/cell ${
+                                                            isCurMonth(i + 1) ? 'bg-blue-50 group-hover:bg-blue-100/50' : isPastMonth(i + 1) ? 'bg-gray-100/60' : ''
+                                                        } ${amount > 0 ? getAmountTextClass(e, i) : ''}`}>
+                                                        {amount > 0
+                                                            ? `$${fmt(amount)}`
+                                                            : <span className="invisible group-hover/cell:visible text-gray-300 text-xs select-none">+</span>
+                                                        }
+                                                    </td>
+                                                )
+                                            })}
                                         </tr>
                                     )
                                 })}

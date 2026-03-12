@@ -1,19 +1,23 @@
 import { useState } from 'react'
 import { LoadExpense } from './pages/ExpenseForm'
 import { Dashboard } from './pages/Dashboard'
+import { Flujo } from './pages/Flujo'
 import { CardsPage, RecurringPage, CotizacionPage, CategoriesPage } from './pages/Config'
+import { Backup } from './pages/Backup'
 
 const NAV_ITEMS = [
     { id: 'load',       label: '+ Cargar gasto' },
     { id: 'dashboard',  label: '📊 Resumen' },
+    { id: 'flujo',      label: '💰 Flujo' },
     { id: 'cards',      label: '💳 Tarjetas' },
     { id: 'recurring',  label: '🔁 Recurrentes' },
     { id: 'categories', label: '🗂️ Categorías' },
     { id: 'cotizacion', label: '💵 Cotización USD' },
+    { id: 'backup',     label: '💾 Backup' },
 ]
 
 // Pages that should stay narrow (forms / config)
-const NARROW_PAGES = new Set(['load', 'cards', 'recurring', 'categories', 'cotizacion'])
+const NARROW_PAGES = new Set(['load', 'cards', 'recurring', 'categories', 'cotizacion', 'backup'])
 
 export default function App() {
     const [activeTab, setActiveTab] = useState('dashboard')
@@ -106,10 +110,12 @@ export default function App() {
                     {activeTab === 'dashboard' && (
                         <Dashboard key={savedCount} />
                     )}
+                    {activeTab === 'flujo' && <Flujo />}
                     {activeTab === 'cards'      && <div className="md:max-w-lg"><CardsPage /></div>}
                     {activeTab === 'recurring'  && <div className="md:max-w-lg"><RecurringPage /></div>}
                     {activeTab === 'categories' && <div className="md:max-w-lg"><CategoriesPage /></div>}
                     {activeTab === 'cotizacion' && <div className="md:max-w-lg"><CotizacionPage /></div>}
+                    {activeTab === 'backup'     && <div className="md:max-w-lg"><Backup /></div>}
                 </div>
             </div>
         </div>

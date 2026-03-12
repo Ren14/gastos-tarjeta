@@ -62,4 +62,35 @@ export const api = {
     }),
 
     updateExpense: (id, data) => request(`/expenses/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+
+    // Admin / Backup
+    exportDB: async () => {
+        const res = await fetch(`${BASE_URL}/admin/export-db`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+        })
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+        return res.blob()
+    },
+    importDB: async (file) => {
+        const form = new FormData()
+        form.append('file', file)
+        const res = await fetch(`${BASE_URL}/admin/import-db`, {
+            method: 'POST',
+            headers: { 'X-Confirm-Restore': 'true' },
+            body: form,
+        })
+        const text = await res.text()
+        if (!res.ok) throw new Error(text || `HTTP ${res.status}`)
+        return JSON.parse(text)
+    },
+
+    // Cashflow
+    getCashflowCategories: () => request('/cashflow/categories'),
+    createCashflowCategory: (data) => request('/cashflow/categories', { method: 'POST', body: JSON.stringify(data) }),
+    updateCashflowCategory: (id, data) => request(`/cashflow/categories/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    getCashflowEntries: (year) => request(`/cashflow/entries?year=${year}`),
+    saveCashflowEntry: (data) => request('/cashflow/entries', { method: 'POST', body: JSON.stringify(data) }),
+    deleteCashflowEntry: (id) => request(`/cashflow/entries/${id}`, { method: 'DELETE' }),
+    getCardTotals: (year) => request(`/cashflow/card-totals?year=${year}`),
 }

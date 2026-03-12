@@ -30,6 +30,7 @@ type Expense struct {
 	PurchaseDate      string    `json:"purchase_date"`
 	RecurringID       *int      `json:"recurring_id"`
 	Notes             *string   `json:"notes"`
+	Color             *string   `json:"color"`
 	CreatedAt         time.Time `json:"created_at"`
 }
 

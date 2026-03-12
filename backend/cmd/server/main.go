@@ -27,7 +27,7 @@ func main() {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Access-Control-Allow-Origin", "*")
 			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-			w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, X-Confirm-Restore")
 			if r.Method == "OPTIONS" {
 				w.WriteHeader(http.StatusOK)
 				return
@@ -66,6 +66,19 @@ func main() {
 		r.Post("/recurring/generate", handlers.GenerateRecurring)
 
 		r.Put("/expenses/{id}", handlers.UpdateExpense)
+
+		// Cashflow
+		r.Get("/cashflow/categories", handlers.GetCashflowCategories)
+		r.Post("/cashflow/categories", handlers.CreateCashflowCategory)
+		r.Put("/cashflow/categories/{id}", handlers.UpdateCashflowCategory)
+		r.Get("/cashflow/entries", handlers.GetCashflowEntries)
+		r.Post("/cashflow/entries", handlers.SaveCashflowEntry)
+		r.Delete("/cashflow/entries/{id}", handlers.DeleteCashflowEntry)
+		r.Get("/cashflow/card-totals", handlers.GetCardTotals)
+
+		// Admin
+		r.Post("/admin/export-db", handlers.ExportDB)
+		r.Post("/admin/import-db", handlers.ImportDB)
 	})
 
 	port := os.Getenv("PORT")
