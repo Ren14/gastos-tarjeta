@@ -10,6 +10,8 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
+type monthKey struct{ Month, Year int }
+
 // ── Category structs ──────────────────────────────────────────────────────────
 
 type CashflowCategory struct {
@@ -261,14 +263,78 @@ func GetCardTotals(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Return as array of {month:1..12, total:float64}
+	// Months where recurring was already generated
+	generatedMonths := map[monthKey]bool{}
+	genRows, err := db.Pool.Query(r.Context(),
+		`SELECT DISTINCT EXTRACT(MONTH FROM purchase_date)::int, EXTRACT(YEAR FROM purchase_date)::int
+		 FROM expenses WHERE recurring_id IS NOT NULL`)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer genRows.Close()
+	for genRows.Next() {
+		var m, y int
+		genRows.Scan(&m, &y)
+		generatedMonths[monthKey{m, y}] = true
+	}
+
+	// Active recurring expenses
+	type recurringItem struct{ AmountUSD float64 }
+	var recurringItems []recurringItem
+	recRows, err := db.Pool.Query(r.Context(),
+		"SELECT amount_usd FROM recurring_expenses WHERE active = true")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer recRows.Close()
+	for recRows.Next() {
+		var ri recurringItem
+		recRows.Scan(&ri.AmountUSD)
+		recurringItems = append(recurringItems, ri)
+	}
+
+	// Latest exchange rate as fallback
+	var latestRate float64
+	db.Pool.QueryRow(r.Context(),
+		"SELECT usd_to_ars FROM exchange_rate_history ORDER BY year DESC, month DESC LIMIT 1",
+	).Scan(&latestRate)
+
+	// Add estimated recurring for current+future months not yet generated
+	now := time.Now()
+	currentMonthStart := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC)
+	recurringTotals := make([]float64, 12)
+	hasPending := make([]bool, 12)
+	if len(recurringItems) > 0 && latestRate > 0 {
+		for i, target := range monthDates {
+			key := monthKey{int(target.Month()), target.Year()}
+			if !target.Before(currentMonthStart) && !generatedMonths[key] {
+				for _, ri := range recurringItems {
+					amt := ri.AmountUSD * latestRate
+					totals[i] += amt
+					recurringTotals[i] += amt
+				}
+				hasPending[i] = true
+			}
+		}
+	}
+
+	// Return as array of {month:1..12, total:float64, has_pending_recurring:bool, recurring_total:float64}
 	type MonthTotal struct {
-		Month int     `json:"month"`
-		Total float64 `json:"total"`
+		Month               int     `json:"month"`
+		Total               float64 `json:"total"`
+		HasPendingRecurring bool    `json:"has_pending_recurring"`
+		RecurringTotal      float64 `json:"recurring_total"`
 	}
 	result := make([]MonthTotal, 12)
 	for i := 0; i < 12; i++ {
-		result[i] = MonthTotal{Month: i + 1, Total: totals[i]}
+		result[i] = MonthTotal{
+			Month:               i + 1,
+			Total:               totals[i],
+			HasPendingRecurring: hasPending[i],
+			RecurringTotal:      recurringTotals[i],
+		}
 	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(result)

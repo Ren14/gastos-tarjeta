@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"os"
-	"os/exec"
 	"strconv"
 	"strings"
 	"time"
@@ -15,25 +13,11 @@ import (
 	"github.com/Ren14/gastos-tarjeta/internal/db"
 )
 
-// ExportDB streams a SQL backup of the database.
-// Tries pg_dump first; falls back to manual INSERT generation.
+// ExportDB streams a SQL backup of the database as INSERT statements.
 func ExportDB(w http.ResponseWriter, r *http.Request) {
 	date := time.Now().Format("2006-01-02")
 	filename := fmt.Sprintf("gastos-tarjeta-backup-%s.sql", date)
 
-	if dbURL := os.Getenv("DATABASE_URL"); dbURL != "" {
-		if pgDumpPath, err := exec.LookPath("pg_dump"); err == nil {
-			cmd := exec.CommandContext(r.Context(), pgDumpPath, "--no-owner", "--no-acl", dbURL)
-			if out, err := cmd.Output(); err == nil {
-				w.Header().Set("Content-Type", "application/sql")
-				w.Header().Set("Content-Disposition", `attachment; filename="`+filename+`"`)
-				w.Write(out)
-				return
-			}
-		}
-	}
-
-	// Fallback: generate INSERT statements manually
 	sql, err := manualExport(r.Context())
 	if err != nil {
 		http.Error(w, "Export failed: "+err.Error(), http.StatusInternalServerError)
@@ -70,19 +54,6 @@ func ImportDB(w http.ResponseWriter, r *http.Request) {
 	}
 	content := string(sqlBytes)
 
-	// Try psql (handles pg_dump format including dollar-quoted strings, etc.)
-	if dbURL := os.Getenv("DATABASE_URL"); dbURL != "" {
-		if psqlPath, err := exec.LookPath("psql"); err == nil {
-			cmd := exec.CommandContext(r.Context(), psqlPath, "--single-transaction", dbURL)
-			cmd.Stdin = strings.NewReader(content)
-			if _, err := cmd.CombinedOutput(); err == nil {
-				writeAdminJSON(w, `{"success":true,"message":"Database restored successfully"}`)
-				return
-			}
-		}
-	}
-
-	// Fallback: execute statement-by-statement in a transaction
 	if err := executeSQL(r.Context(), content); err != nil {
 		http.Error(w, "Restore failed: "+err.Error(), http.StatusInternalServerError)
 		return
@@ -138,7 +109,7 @@ func manualExport(ctx context.Context) (string, error) {
 		{
 			"expenses",
 			"SELECT id, card_id, category_id, merchant, total_amount::float8, installments, " +
-				"installment_amount::float8, purchase_date::text, notes, color, created_at, recurring_id " +
+				"purchase_date::text, notes, color, created_at, recurring_id " +
 				"FROM expenses ORDER BY id",
 		},
 		{

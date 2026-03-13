@@ -11,6 +11,7 @@ import (
 
 	"github.com/Ren14/gastos-tarjeta/internal/db"
 	"github.com/Ren14/gastos-tarjeta/internal/handlers"
+	authmw "github.com/Ren14/gastos-tarjeta/internal/middleware"
 )
 
 func main() {
@@ -27,7 +28,7 @@ func main() {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Access-Control-Allow-Origin", "*")
 			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, X-Confirm-Restore, X-Confirm-Truncate")
+			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Confirm-Restore, X-Confirm-Truncate")
 			if r.Method == "OPTIONS" {
 				w.WriteHeader(http.StatusOK)
 				return
@@ -36,7 +37,11 @@ func main() {
 		})
 	})
 
+	// Public
+	r.Post("/api/v1/auth/login", handlers.Login)
+
 	r.Route("/api/v1", func(r chi.Router) {
+		r.Use(authmw.Authenticate)
 		r.Get("/cards", handlers.GetCards)
 		r.Post("/cards", handlers.CreateCard)
 		r.Put("/cards/{id}", handlers.UpdateCard)

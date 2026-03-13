@@ -4,6 +4,9 @@ import { Dashboard } from './pages/Dashboard'
 import { Flujo } from './pages/Flujo'
 import { CardsPage, RecurringPage, CotizacionPage, CategoriesPage } from './pages/Config'
 import { Backup } from './pages/Backup'
+import { Login } from './pages/Login'
+import { AuthProvider, useAuth } from './context/AuthContext'
+import { setOnUnauthorized } from './api/client'
 
 const NAV_ITEMS = [
     { id: 'load',       label: '+ Cargar gasto' },
@@ -20,9 +23,23 @@ const NAV_ITEMS = [
 const NARROW_PAGES = new Set(['load', 'cards', 'recurring', 'categories', 'cotizacion', 'backup'])
 
 export default function App() {
+    return (
+        <AuthProvider>
+            <AppContent />
+        </AuthProvider>
+    )
+}
+
+function AppContent() {
+    const { token, logout } = useAuth()
     const [activeTab, setActiveTab] = useState('dashboard')
     const [drawerOpen, setDrawerOpen] = useState(false)
     const [savedCount, setSavedCount] = useState(0)
+
+    // Wire up 401 → logout
+    setOnUnauthorized(logout)
+
+    if (!token) return <Login />
 
     function navigate(tab) {
         setActiveTab(tab)
@@ -72,6 +89,14 @@ export default function App() {
                             </button>
                         ))}
                     </nav>
+                </div>
+                <div className="px-4 xl:px-5 pb-6 border-t border-gray-100 pt-4">
+                    <button
+                        onClick={logout}
+                        className="w-full text-left px-3 py-2.5 rounded-xl text-sm font-semibold text-gray-400 hover:bg-gray-100 hover:text-gray-700 transition-colors"
+                    >
+                        🚪 Cerrar sesión
+                    </button>
                 </div>
             </aside>
 

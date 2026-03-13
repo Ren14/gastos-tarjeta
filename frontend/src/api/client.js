@@ -1,10 +1,28 @@
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api/v1'
 
+let currentToken = null
+let onUnauthorized = null
+
+export function setToken(token) { currentToken = token }
+export function setOnUnauthorized(cb) { onUnauthorized = cb }
+
+function authHeaders(extra = {}) {
+    return currentToken
+        ? { 'Content-Type': 'application/json', 'Authorization': `Bearer ${currentToken}`, ...extra }
+        : { 'Content-Type': 'application/json', ...extra }
+}
+
 async function request(path, options = {}) {
     const res = await fetch(`${BASE_URL}${path}`, {
-        headers: { 'Content-Type': 'application/json' },
         ...options,
+        headers: { ...authHeaders(), ...options.headers },
     })
+    if (res.status === 401) {
+        if (onUnauthorized) onUnauthorized()
+        const error = new Error('Unauthorized')
+        error.status = 401
+        throw error
+    }
     if (!res.ok) {
         const error = new Error(`HTTP ${res.status}`)
         error.status = res.status
@@ -67,19 +85,23 @@ export const api = {
     exportDB: async () => {
         const res = await fetch(`${BASE_URL}/admin/export-db`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: authHeaders(),
         })
+        if (res.status === 401) { if (onUnauthorized) onUnauthorized(); throw new Error('Unauthorized') }
         if (!res.ok) throw new Error(`HTTP ${res.status}`)
         return res.blob()
     },
     importDB: async (file) => {
         const form = new FormData()
         form.append('file', file)
+        const headers = { 'X-Confirm-Restore': 'true' }
+        if (currentToken) headers['Authorization'] = `Bearer ${currentToken}`
         const res = await fetch(`${BASE_URL}/admin/import-db`, {
             method: 'POST',
-            headers: { 'X-Confirm-Restore': 'true' },
+            headers,
             body: form,
         })
+        if (res.status === 401) { if (onUnauthorized) onUnauthorized(); throw new Error('Unauthorized') }
         const text = await res.text()
         if (!res.ok) throw new Error(text || `HTTP ${res.status}`)
         return JSON.parse(text)
@@ -97,7 +119,7 @@ export const api = {
     truncateDB: async () => {
         const res = await fetch(`${BASE_URL}/admin/truncate-db`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'X-Confirm-Truncate': 'true' },
+            headers: authHeaders({ 'X-Confirm-Truncate': 'true' }),
         })
         const text = await res.text()
         if (!res.ok) throw new Error(text || `HTTP ${res.status}`)
