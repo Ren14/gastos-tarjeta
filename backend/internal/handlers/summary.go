@@ -6,11 +6,18 @@ import (
 	"net/http"
 	"sort"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/Ren14/gastos-tarjeta/internal/db"
 	"github.com/Ren14/gastos-tarjeta/internal/models"
 )
+
+// normalizeMerchant lowercases, trims, and strips trailing punctuation so that
+// "Seguro auto" and "Seguro auto." compare as equal.
+func normalizeMerchant(s string) string {
+	return strings.TrimRight(strings.ToLower(strings.TrimSpace(s)), " .,-")
+}
 
 func getFirstImpactMonth(purchaseDateStr string) time.Time {
 	purchaseDate, _ := time.Parse("2006-01-02", purchaseDateStr)
@@ -232,10 +239,12 @@ func GetProjection(w http.ResponseWriter, r *http.Request) {
 	type RecurringItem struct {
 		CardID    int
 		AmountUSD float64
+		AmountARS *float64
+		Currency  string
 	}
 	recurringItems := []RecurringItem{}
 	recRows, err := db.Pool.Query(context.Background(),
-		"SELECT card_id, amount_usd FROM recurring_expenses WHERE active = true")
+		"SELECT card_id, amount_usd, amount_ars, currency FROM recurring_expenses WHERE active = true")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -243,19 +252,44 @@ func GetProjection(w http.ResponseWriter, r *http.Request) {
 	defer recRows.Close()
 	for recRows.Next() {
 		var ri RecurringItem
-		recRows.Scan(&ri.CardID, &ri.AmountUSD)
+		recRows.Scan(&ri.CardID, &ri.AmountUSD, &ri.AmountARS, &ri.Currency)
 		recurringItems = append(recurringItems, ri)
 	}
 
-	// Cotización más reciente disponible como fallback
+	// Cotización más reciente disponible como fallback (sólo para recurrentes USD)
 	var latestRate float64
 	db.Pool.QueryRow(context.Background(),
 		"SELECT usd_to_ars FROM exchange_rate_history ORDER BY year DESC, month DESC LIMIT 1",
 	).Scan(&latestRate)
 
+	// Check whether any USD recurring items exist (to know if rate is needed)
+	hasUSDRecurring := false
+	for _, ri := range recurringItems {
+		if ri.Currency == "USD" {
+			hasUSDRecurring = true
+			break
+		}
+	}
+
+	// Merchants with an active recurring definition — manually-entered expenses
+	// for these merchants are excluded to avoid double-counting.
+	recurringMerchantSet := map[string]bool{}
+	rmRows, err := db.Pool.Query(context.Background(),
+		"SELECT merchant FROM recurring_expenses WHERE active = true")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer rmRows.Close()
+	for rmRows.Next() {
+		var m string
+		rmRows.Scan(&m)
+		recurringMerchantSet[normalizeMerchant(m)] = true
+	}
+
 	// Traemos todos los gastos; distinguimos recurrentes de regulares
 	rows, err := db.Pool.Query(context.Background(),
-		"SELECT total_amount, installments, purchase_date, card_id, recurring_id IS NOT NULL FROM expenses")
+		"SELECT total_amount, installments, purchase_date, card_id, recurring_id IS NOT NULL, merchant FROM expenses")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -296,7 +330,8 @@ func GetProjection(w http.ResponseWriter, r *http.Request) {
 		var installments, cardID int
 		var purchaseDate time.Time
 		var isRecurring bool
-		rows.Scan(&totalAmount, &installments, &purchaseDate, &cardID, &isRecurring)
+		var merchant string
+		rows.Scan(&totalAmount, &installments, &purchaseDate, &cardID, &isRecurring, &merchant)
 
 		if isRecurring {
 			// Generated recurring expenses impact exactly the month of their purchase_date.
@@ -310,6 +345,11 @@ func GetProjection(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 		} else {
+			// Skip manually-entered expenses whose merchant is covered by an active
+			// recurring definition — they're already counted in the recurring estimate.
+			if recurringMerchantSet[normalizeMerchant(merchant)] {
+				continue
+			}
 			firstImpact := getFirstImpactMonth(purchaseDate.Format("2006-01-02"))
 			for i, targetMonth := range monthDates {
 				lastImpact := time.Date(firstImpact.Year(), firstImpact.Month()+time.Month(installments)-1, 1, 0, 0, 0, 0, time.UTC)
@@ -336,16 +376,28 @@ func GetProjection(w http.ResponseWriter, r *http.Request) {
 	for i, targetMonth := range monthDates {
 		key := MonthKey{int(targetMonth.Month()), targetMonth.Year()}
 		isPast := targetMonth.Before(currentMonthStart)
-		hasPending := len(recurringItems) > 0 && !generatedMonths[key] && latestRate > 0 && !isPast
+		// hasPending: there are active recurring items, month not yet generated, not in the past,
+		// and (if USD recurring exist) we have a rate available.
+		rateOKForUSD := !hasUSDRecurring || latestRate > 0
+		hasPending := len(recurringItems) > 0 && !generatedMonths[key] && rateOKForUSD && !isPast
 		recurringTotal := 0.0
 
 		// Sumamos estimación de recurrentes si aún no fueron generados
 		if hasPending {
 			for _, ri := range recurringItems {
 				if _, ok := cardMap[ri.CardID]; ok {
-					amt := ri.AmountUSD * latestRate
-					monthTotals[i][ri.CardID] += amt
-					recurringTotal += amt
+					var amt float64
+					if ri.Currency == "ARS" {
+						if ri.AmountARS != nil {
+							amt = *ri.AmountARS
+						}
+					} else {
+						amt = ri.AmountUSD * latestRate
+					}
+					if amt > 0 {
+						monthTotals[i][ri.CardID] += amt
+						recurringTotal += amt
+					}
 				}
 			}
 		}
@@ -368,13 +420,17 @@ func GetProjection(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 
+		// ~ indicator only when there are pending USD recurring items;
+		// ARS amounts are always known so they never need the estimated marker.
+		hasUSDPending := hasPending && hasUSDRecurring
+
 		result = append(result, MonthData{
 			Month:               int(targetMonth.Month()),
 			Year:                targetMonth.Year(),
 			Total:               total,
 			ByCard:              byCard,
 			HasData:             hasData,
-			HasPendingRecurring: hasPending,
+			HasPendingRecurring: hasUSDPending,
 			RecurringTotal:      recurringTotal,
 		})
 	}

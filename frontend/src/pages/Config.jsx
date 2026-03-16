@@ -217,7 +217,7 @@ function CardsSection() {
     )
 }
 
-const EMPTY_RECURRING = { merchant: '', card_id: '', category_id: '', amount_usd: '' }
+const EMPTY_RECURRING = { merchant: '', card_id: '', category_id: '', currency: 'USD', amount_usd: '', amount_ars: '' }
 
 function RecurringForm({ form, setForm, cards, categories }) {
     const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
@@ -239,12 +239,29 @@ function RecurringForm({ form, setForm, cards, categories }) {
                     </select>
                 </div>
                 <div>
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Moneda</label>
+                    <select value={form.currency} onChange={e => set('currency', e.target.value)}
+                            className="w-full mt-1 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-gray-900 outline-none">
+                        <option value="USD">USD</option>
+                        <option value="ARS">ARS</option>
+                    </select>
+                </div>
+            </div>
+            {form.currency === 'ARS' ? (
+                <div>
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Monto ARS</label>
+                    <input type="number" value={form.amount_ars} onChange={e => set('amount_ars', e.target.value)}
+                           placeholder="14200"
+                           className="w-full mt-1 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-gray-900 outline-none" />
+                </div>
+            ) : (
+                <div>
                     <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Monto USD</label>
                     <input type="number" value={form.amount_usd} onChange={e => set('amount_usd', e.target.value)}
                            placeholder="9.99"
                            className="w-full mt-1 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-gray-900 outline-none" />
                 </div>
-            </div>
+            )}
             <div>
                 <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Categoría (opcional)</label>
                 <select value={form.category_id} onChange={e => set('category_id', e.target.value)}
@@ -272,7 +289,9 @@ function RecurringSection({ recurring, cards, categories, onRefresh }) {
             merchant: item.merchant,
             card_id: item.card_id,
             category_id: item.category_id ?? '',
-            amount_usd: item.amount_usd,
+            currency: item.currency ?? 'USD',
+            amount_usd: item.amount_usd ?? '',
+            amount_ars: item.amount_ars ?? '',
         })
         setAdding(false)
         setConfirmDeactivate(null)
@@ -282,11 +301,14 @@ function RecurringSection({ recurring, cards, categories, onRefresh }) {
         setLoading(true)
         setMsg(null)
         try {
+            const isARS = editForm.currency === 'ARS'
             await api.updateRecurring(editingId, {
                 merchant: editForm.merchant,
                 card_id: Number(editForm.card_id),
                 category_id: editForm.category_id ? Number(editForm.category_id) : null,
-                amount_usd: parseFloat(editForm.amount_usd),
+                currency: editForm.currency,
+                amount_usd: isARS ? 0 : parseFloat(editForm.amount_usd) || 0,
+                amount_ars: isARS ? parseFloat(editForm.amount_ars) || 0 : null,
                 active: true,
             })
             setEditingId(null)
@@ -310,7 +332,9 @@ function RecurringSection({ recurring, cards, categories, onRefresh }) {
                 merchant: item.merchant,
                 card_id: item.card_id,
                 category_id: item.category_id ?? null,
-                amount_usd: item.amount_usd,
+                currency: item.currency ?? 'USD',
+                amount_usd: item.amount_usd ?? 0,
+                amount_ars: item.amount_ars ?? null,
                 active: false,
             })
             setEditingId(null)
@@ -328,11 +352,14 @@ function RecurringSection({ recurring, cards, categories, onRefresh }) {
         setLoading(true)
         setMsg(null)
         try {
+            const isARS = newItem.currency === 'ARS'
             await api.createRecurring({
                 merchant: newItem.merchant,
                 card_id: Number(newItem.card_id),
                 category_id: newItem.category_id ? Number(newItem.category_id) : null,
-                amount_usd: parseFloat(newItem.amount_usd),
+                currency: newItem.currency,
+                amount_usd: isARS ? 0 : parseFloat(newItem.amount_usd) || 0,
+                amount_ars: isARS ? parseFloat(newItem.amount_ars) || 0 : null,
             })
             setNewItem(EMPTY_RECURRING)
             setAdding(false)
@@ -345,7 +372,8 @@ function RecurringSection({ recurring, cards, categories, onRefresh }) {
         }
     }
 
-    const canAdd = newItem.merchant && newItem.card_id && newItem.amount_usd
+    const canAdd = newItem.merchant && newItem.card_id &&
+        (newItem.currency === 'ARS' ? newItem.amount_ars : newItem.amount_usd)
 
     return (
         <div>
@@ -365,7 +393,11 @@ function RecurringSection({ recurring, cards, categories, onRefresh }) {
                                     <span className="text-base leading-none">{cat?.icon ?? '🔁'}</span>
                                     <div>
                                         <p className="text-sm font-semibold text-gray-900">{item.merchant}</p>
-                                        <p className="text-xs text-gray-400">{card?.name ?? '—'} · USD {item.amount_usd}</p>
+                                        <p className="text-xs text-gray-400">
+                                            {card?.name ?? '—'} · {item.currency === 'ARS'
+                                                ? `$${Number(item.amount_ars).toLocaleString('es-AR')} ARS`
+                                                : `USD ${item.amount_usd}`}
+                                        </p>
                                     </div>
                                 </div>
                                 <button
@@ -740,6 +772,8 @@ export function CotizacionPage() {
         }
     }
 
+    const hasUSDRecurring = recurring.some(r => (r.currency ?? 'USD') === 'USD')
+
     async function handleGenerate() {
         setGenLoading(true)
         setMessage(null)
@@ -748,7 +782,7 @@ export function CotizacionPage() {
             setMessage({ type: 'success', text: `${res.generated} recurrentes generados para ${MONTHS[month-1]} ${year}` })
         } catch (e) {
             const text = e.status === 402
-                ? 'Primero guardá la cotización del mes'
+                ? 'Primero guardá la cotización del mes (necesaria para recurrentes USD)'
                 : e.status === 409
                     ? `Los recurrentes de ${MONTHS[month-1]} ${year} ya fueron generados`
                     : 'Error al generar recurrentes'
@@ -832,32 +866,42 @@ export function CotizacionPage() {
                 </h2>
                 <div className="bg-white border border-gray-200 rounded-xl px-4 py-3 mb-3">
                     <p className="text-xs text-gray-500 mb-3">
-                        Genera los gastos recurrentes de <strong>{MONTHS[month-1]} {year}</strong> usando la cotización cargada.
+                        Genera los gastos recurrentes de <strong>{MONTHS[month-1]} {year}</strong>.
                         {currentRate && (
                             <span className="text-green-600 ml-1">
                                 (1 USD = ${parseFloat(currentRate.usd_to_ars).toLocaleString('es-AR')})
                             </span>
                         )}
+                        {!currentRate && hasUSDRecurring && (
+                            <span className="text-orange-500 ml-1">
+                                — Cargá la cotización para generar recurrentes USD.
+                            </span>
+                        )}
                     </p>
                     <div className="flex flex-col gap-1 mb-3">
                         {recurring.map(r => {
-                            const arsAmount = currentRate ? (r.amount_usd * currentRate.usd_to_ars) : null
+                            const isARS = (r.currency ?? 'USD') === 'ARS'
+                            const arsAmount = isARS
+                                ? r.amount_ars
+                                : (currentRate ? r.amount_usd * currentRate.usd_to_ars : null)
                             return (
                                 <div key={r.id} className="flex justify-between text-xs py-1 border-b border-gray-100 last:border-0">
                                     <span className="text-gray-700">{r.merchant}</span>
-                                    <div className="flex gap-2">
-                                        {arsAmount && (
+                                    <div className="flex gap-2 items-center">
+                                        {arsAmount != null && (
                                             <span className="text-green-600 font-semibold">
-                                                ${arsAmount.toLocaleString('es-AR', { minimumFractionDigits: 0 })}
+                                                ${Number(arsAmount).toLocaleString('es-AR', { minimumFractionDigits: 0 })}
                                             </span>
                                         )}
-                                        <span className="text-gray-400">USD {r.amount_usd}</span>
+                                        <span className="text-gray-400">
+                                            {isARS ? 'ARS' : `USD ${r.amount_usd}`}
+                                        </span>
                                     </div>
                                 </div>
                             )
                         })}
                     </div>
-                    <button onClick={handleGenerate} disabled={genLoading}
+                    <button onClick={handleGenerate} disabled={genLoading || (hasUSDRecurring && !currentRate)}
                             className="w-full py-2 bg-gray-900 text-white rounded-xl text-sm font-bold disabled:opacity-50">
                         {genLoading ? 'Generando...' : `Generar para ${MONTHS[month-1]} ${year}`}
                     </button>
@@ -976,6 +1020,8 @@ export function Config() {
         }
     }
 
+    const hasUSDRecurringConfig = recurring.some(r => (r.currency ?? 'USD') === 'USD')
+
     async function handleGenerate() {
         setGenLoading(true)
         setMessage(null)
@@ -984,7 +1030,7 @@ export function Config() {
             setMessage({ type: 'success', text: `${res.generated} recurrentes generados para ${MONTHS[month-1]} ${year}` })
         } catch (e) {
             const text = e.status === 402
-                ? 'Primero guardá la cotización del mes'
+                ? 'Primero guardá la cotización del mes (necesaria para recurrentes USD)'
                 : e.status === 409
                     ? `Los recurrentes de ${MONTHS[month-1]} ${year} ya fueron generados`
                     : 'Error al generar recurrentes'
@@ -1084,32 +1130,42 @@ export function Config() {
                 </h2>
                 <div className="bg-white border border-gray-200 rounded-xl px-4 py-3 mb-3">
                     <p className="text-xs text-gray-500 mb-3">
-                        Genera los gastos recurrentes de <strong>{MONTHS[month-1]} {year}</strong> usando la cotización cargada.
+                        Genera los gastos recurrentes de <strong>{MONTHS[month-1]} {year}</strong>.
                         {currentRate && (
                             <span className="text-green-600 ml-1">
-                (1 USD = ${parseFloat(currentRate.usd_to_ars).toLocaleString('es-AR')})
-              </span>
+                                (1 USD = ${parseFloat(currentRate.usd_to_ars).toLocaleString('es-AR')})
+                            </span>
+                        )}
+                        {!currentRate && hasUSDRecurringConfig && (
+                            <span className="text-orange-500 ml-1">
+                                — Cargá la cotización para generar recurrentes USD.
+                            </span>
                         )}
                     </p>
                     <div className="flex flex-col gap-1 mb-3">
                         {recurring.map(r => {
-                            const arsAmount = currentRate ? (r.amount_usd * currentRate.usd_to_ars) : null
+                            const isARS = (r.currency ?? 'USD') === 'ARS'
+                            const arsAmount = isARS
+                                ? r.amount_ars
+                                : (currentRate ? r.amount_usd * currentRate.usd_to_ars : null)
                             return (
                                 <div key={r.id} className="flex justify-between text-xs py-1 border-b border-gray-100 last:border-0">
                                     <span className="text-gray-700">{r.merchant}</span>
-                                    <div className="flex gap-2">
-                                        {arsAmount && (
+                                    <div className="flex gap-2 items-center">
+                                        {arsAmount != null && (
                                             <span className="text-green-600 font-semibold">
-                        ${arsAmount.toLocaleString('es-AR', { minimumFractionDigits: 0 })}
-                      </span>
+                                                ${Number(arsAmount).toLocaleString('es-AR', { minimumFractionDigits: 0 })}
+                                            </span>
                                         )}
-                                        <span className="text-gray-400">USD {r.amount_usd}</span>
+                                        <span className="text-gray-400">
+                                            {isARS ? 'ARS' : `USD ${r.amount_usd}`}
+                                        </span>
                                     </div>
                                 </div>
                             )
                         })}
                     </div>
-                    <button onClick={handleGenerate} disabled={genLoading}
+                    <button onClick={handleGenerate} disabled={genLoading || (hasUSDRecurringConfig && !currentRate)}
                             className="w-full py-2 bg-gray-900 text-white rounded-xl text-sm font-bold disabled:opacity-50">
                         {genLoading ? 'Generando...' : `Generar para ${MONTHS[month-1]} ${year}`}
                     </button>

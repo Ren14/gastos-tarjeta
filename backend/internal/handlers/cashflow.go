@@ -202,12 +202,28 @@ func GetCardTotals(w http.ResponseWriter, r *http.Request) {
 	}
 	totals := make([]float64, 12)
 
+	// Merchants with an active recurring definition — manually-entered expenses
+	// for these merchants are excluded to avoid double-counting.
+	recurringMerchantSet := map[string]bool{}
+	rmRows, err := db.Pool.Query(r.Context(),
+		"SELECT merchant FROM recurring_expenses WHERE active = true")
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer rmRows.Close()
+	for rmRows.Next() {
+		var m string
+		rmRows.Scan(&m)
+		recurringMerchantSet[normalizeMerchant(m)] = true
+	}
+
 	// Query all expenses — fetch enough history to cover installments
 	// Use a wide date range: up to 24 months before Jan of requested year
 	startDate := time.Date(year-2, 1, 1, 0, 0, 0, 0, time.UTC)
 	rows, err := db.Pool.Query(r.Context(),
 		`SELECT purchase_date, total_amount, installments,
-                (recurring_id IS NOT NULL) AS is_recurring
+                (recurring_id IS NOT NULL) AS is_recurring, merchant
          FROM expenses
          WHERE purchase_date >= $1`,
 		startDate)
@@ -222,7 +238,8 @@ func GetCardTotals(w http.ResponseWriter, r *http.Request) {
 		var totalAmount float64
 		var installments int
 		var isRecurring bool
-		if err := rows.Scan(&purchaseDate, &totalAmount, &installments, &isRecurring); err != nil {
+		var merchant string
+		if err := rows.Scan(&purchaseDate, &totalAmount, &installments, &isRecurring, &merchant); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
@@ -244,6 +261,11 @@ func GetCardTotals(w http.ResponseWriter, r *http.Request) {
 				}
 			}
 		} else {
+			// Skip manually-entered expenses whose merchant is covered by an active
+			// recurring definition — they're already counted in the recurring estimate.
+			if recurringMerchantSet[normalizeMerchant(merchant)] {
+				continue
+			}
 			// Regular: apply installment impact logic
 			firstImpact := getFirstImpactMonth(purchaseDateStr)
 			for inst := 0; inst < installments; inst++ {
@@ -280,10 +302,14 @@ func GetCardTotals(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Active recurring expenses
-	type recurringItem struct{ AmountUSD float64 }
+	type recurringItem struct {
+		AmountUSD float64
+		AmountARS *float64
+		Currency  string
+	}
 	var recurringItems []recurringItem
 	recRows, err := db.Pool.Query(r.Context(),
-		"SELECT amount_usd FROM recurring_expenses WHERE active = true")
+		"SELECT amount_usd, amount_ars, currency FROM recurring_expenses WHERE active = true")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -291,31 +317,51 @@ func GetCardTotals(w http.ResponseWriter, r *http.Request) {
 	defer recRows.Close()
 	for recRows.Next() {
 		var ri recurringItem
-		recRows.Scan(&ri.AmountUSD)
+		recRows.Scan(&ri.AmountUSD, &ri.AmountARS, &ri.Currency)
 		recurringItems = append(recurringItems, ri)
 	}
 
-	// Latest exchange rate as fallback
+	// Latest exchange rate as fallback (only needed for USD recurring)
 	var latestRate float64
 	db.Pool.QueryRow(r.Context(),
 		"SELECT usd_to_ars FROM exchange_rate_history ORDER BY year DESC, month DESC LIMIT 1",
 	).Scan(&latestRate)
+
+	hasUSDRecurring := false
+	for _, ri := range recurringItems {
+		if ri.Currency == "USD" {
+			hasUSDRecurring = true
+			break
+		}
+	}
+	rateOKForUSD := !hasUSDRecurring || latestRate > 0
 
 	// Add estimated recurring for current+future months not yet generated
 	now := time.Now()
 	currentMonthStart := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC)
 	recurringTotals := make([]float64, 12)
 	hasPending := make([]bool, 12)
-	if len(recurringItems) > 0 && latestRate > 0 {
+	if len(recurringItems) > 0 && rateOKForUSD {
 		for i, target := range monthDates {
 			key := monthKey{int(target.Month()), target.Year()}
 			if !target.Before(currentMonthStart) && !generatedMonths[key] {
 				for _, ri := range recurringItems {
-					amt := ri.AmountUSD * latestRate
-					totals[i] += amt
-					recurringTotals[i] += amt
+					var amt float64
+					if ri.Currency == "ARS" {
+						if ri.AmountARS != nil {
+							amt = *ri.AmountARS
+						}
+					} else {
+						amt = ri.AmountUSD * latestRate
+					}
+					if amt > 0 {
+						totals[i] += amt
+						recurringTotals[i] += amt
+					}
 				}
-				hasPending[i] = true
+				// ~ indicator only when there are pending USD recurring items;
+				// ARS amounts are always known so they never need the estimated marker.
+				hasPending[i] = hasUSDRecurring
 			}
 		}
 	}

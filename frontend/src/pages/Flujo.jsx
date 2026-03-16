@@ -220,6 +220,7 @@ export function Flujo() {
     const [cardTotals,   setCardTotals]   = useState([])  // [{month, total}]
     const [showModal,    setShowModal]    = useState(false)
     const [loading,      setLoading]      = useState(true)
+    const [hidePast,     setHidePast]     = useState(false)
 
     const isCurrent = (m) => m === currentMonth && selectedYear === currentYear
     const isPast    = (m) => selectedYear < currentYear || (selectedYear === currentYear && m < currentMonth)
@@ -293,7 +294,8 @@ export function Flujo() {
         [incomeTotals, expenseTotals]
     )
 
-    const months = [1,2,3,4,5,6,7,8,9,10,11,12]
+    const allMonths    = [1,2,3,4,5,6,7,8,9,10,11,12]
+    const months       = hidePast ? allMonths.filter(m => !isPast(m)) : allMonths
 
     function headerCls(m) {
         if (isCurrent(m)) return 'bg-blue-50 text-blue-700'
@@ -318,6 +320,16 @@ export function Flujo() {
                             className="text-xs text-blue-600 hover:underline ml-1">Hoy</button>
                     )}
                 </div>
+                <label className="flex items-center gap-2 cursor-pointer select-none">
+                    <input
+                        type="checkbox"
+                        checked={hidePast}
+                        onChange={e => setHidePast(e.target.checked)}
+                        className="h-4 w-4 rounded border-gray-300"
+                    />
+                    <span className="text-xs font-medium text-gray-500">Ocultar meses anteriores</span>
+                </label>
+
                 <button onClick={() => setShowModal(true)}
                     className="ml-auto px-3 py-1.5 text-xs font-semibold text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors">
                     Categorías
@@ -349,8 +361,8 @@ export function Flujo() {
                             <td className="sticky left-0 z-10 bg-gray-900 border-r border-gray-700 px-4 py-3 text-xs font-bold text-white uppercase tracking-wider whitespace-nowrap">
                                 Disponible
                             </td>
-                            {disponible.map((val, i) => {
-                                const m = i + 1
+                            {months.map(m => {
+                                const val      = disponible[m - 1]
                                 const positive = val > 0
                                 const isZero   = val === 0
                                 const past     = isPast(m)
@@ -372,8 +384,8 @@ export function Flujo() {
                             <td className="sticky left-0 z-10 bg-green-50 border-r border-gray-200 px-4 py-2.5 text-xs font-bold text-green-800 uppercase tracking-wider whitespace-nowrap">
                                 Total Ingresos
                             </td>
-                            {incomeTotals.map((total, i) => {
-                                const m = i + 1
+                            {months.map(m => {
+                                const total = incomeTotals[m - 1]
                                 return (
                                     <td key={m}
                                         className={`px-3 py-2.5 text-right text-sm font-bold whitespace-nowrap tabular-nums ${
@@ -423,8 +435,8 @@ export function Flujo() {
                             <td className="sticky left-0 z-10 bg-red-50/60 border-r border-gray-200 px-4 py-2.5 text-xs font-bold text-red-800 uppercase tracking-wider whitespace-nowrap">
                                 Total Egresos
                             </td>
-                            {expenseTotals.map((total, i) => {
-                                const m = i + 1
+                            {months.map(m => {
+                                const total = expenseTotals[m - 1]
                                 return (
                                     <td key={m}
                                         className={`px-3 py-2.5 text-right text-sm font-bold whitespace-nowrap tabular-nums ${

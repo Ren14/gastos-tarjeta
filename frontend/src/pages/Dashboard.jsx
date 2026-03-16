@@ -25,7 +25,7 @@ function getYearlyAmounts(expense, selectedYear) {
     const perInstallment = expense.total_amount / installments
 
     let firstYear, firstMonth
-    if (expense.recurring_id != null) {
+    if (expense.recurring_id) {
         firstYear  = parseInt(expense.purchase_date.substring(0, 4), 10)
         firstMonth = parseInt(expense.purchase_date.substring(5, 7), 10)
     } else {
@@ -67,7 +67,7 @@ const COLOR_OPTIONS = [
 
 // ── Summary matrix (top section) ─────────────────────────────────────────────
 
-function SummaryMatrix({ projection, projLoading, selectedYear, selectedCardId, currentYear, currentMonth, onCardClick }) {
+function SummaryMatrix({ projection, projLoading, selectedYear, selectedCardId, currentYear, currentMonth, onCardClick, hidePast }) {
     const monthMap = useMemo(() => {
         const m = {}
         for (const d of projection) m[d.month] = d
@@ -99,6 +99,10 @@ function SummaryMatrix({ projection, projLoading, selectedYear, selectedCardId, 
         return { total: c?.total ?? 0, estimated: md.has_pending_recurring }
     }
 
+    const monthsToShow = MONTHS_SHORT
+        .map((name, i) => ({ name, i, month: i + 1 }))
+        .filter(({ month }) => !hidePast || !isPast(month))
+
     if (projLoading) {
         return <p className="text-center text-gray-400 py-6 text-sm">Cargando resumen…</p>
     }
@@ -112,12 +116,12 @@ function SummaryMatrix({ projection, projLoading, selectedYear, selectedCardId, 
                             style={{ minWidth: W_DATE + W_MERCHANT + W_CARD }}>
                             Tarjeta
                         </th>
-                        {MONTHS_SHORT.map((name, i) => {
-                            const md = monthMap[i + 1]
+                        {monthsToShow.map(({ name, i, month }) => {
+                            const md = monthMap[month]
                             return (
                                 <th key={i}
                                     className={`text-right px-3 py-2.5 text-xs font-bold uppercase tracking-wide whitespace-nowrap ${
-                                        isCur(i + 1) ? 'bg-blue-50 text-blue-700' : isPast(i + 1) ? 'bg-gray-100 text-gray-300' : 'bg-gray-50 text-gray-400'
+                                        isCur(month) ? 'bg-blue-50 text-blue-700' : isPast(month) ? 'bg-gray-100 text-gray-300' : 'bg-gray-50 text-gray-400'
                                     }`}
                                     style={{ minWidth: W_MONTH }}>
                                     {name}
@@ -135,13 +139,13 @@ function SummaryMatrix({ projection, projLoading, selectedYear, selectedCardId, 
                         <td className="sticky left-0 z-10 bg-gray-900 border-r border-gray-700 px-4 py-3 text-xs font-bold text-white uppercase tracking-wider whitespace-nowrap">
                             Total
                         </td>
-                        {MONTHS_SHORT.map((_, i) => {
-                            const { total, estimated } = monthTotal(i + 1)
+                        {monthsToShow.map(({ i, month }) => {
+                            const { total, estimated } = monthTotal(month)
                             return (
                                 <td key={i}
                                     className={`px-3 py-3 text-right text-sm font-bold whitespace-nowrap tabular-nums ${
-                                        isCur(i + 1) ? 'bg-gray-800' : 'bg-gray-900'
-                                    } ${total > 0 ? (isPast(i + 1) ? 'text-gray-500' : 'text-white') : 'text-gray-700'}`}>
+                                        isCur(month) ? 'bg-gray-800' : 'bg-gray-900'
+                                    } ${total > 0 ? (isPast(month) ? 'text-gray-500' : 'text-white') : 'text-gray-700'}`}>
                                     {total > 0 && (
                                         <>{estimated && <span className="text-orange-300">~</span>}${fmt(total)}</>
                                     )}
@@ -169,15 +173,15 @@ function SummaryMatrix({ projection, projLoading, selectedYear, selectedCardId, 
                                         {card.card_name}
                                     </span>
                                 </td>
-                                {MONTHS_SHORT.map((_, i) => {
-                                    const { total, estimated } = cardMonthTotal(i + 1, card.card_id)
+                                {monthsToShow.map(({ i, month }) => {
+                                    const { total, estimated } = cardMonthTotal(month, card.card_id)
                                     return (
                                         <td key={i}
                                             className={`px-3 py-2.5 text-right text-sm whitespace-nowrap tabular-nums transition-colors ${
-                                                isCur(i + 1)
+                                                isCur(month)
                                                     ? isSelected ? 'bg-blue-100' : 'bg-blue-50 group-hover:bg-blue-100/60'
-                                                    : isPast(i + 1) ? 'bg-gray-100' : ''
-                                            } ${total === 0 ? 'text-gray-300' : isPast(i + 1) ? 'text-gray-400 font-medium' : estimated ? 'text-orange-500' : 'text-gray-800 font-medium'}`}>
+                                                    : isPast(month) ? 'bg-gray-100' : ''
+                                            } ${total === 0 ? 'text-gray-300' : isPast(month) ? 'text-gray-400 font-medium' : estimated ? 'text-orange-500' : 'text-gray-800 font-medium'}`}>
                                             {total > 0 && (
                                                 <>{estimated && '~'}${fmt(total)}</>
                                             )}
@@ -216,6 +220,7 @@ export function Dashboard() {
     const [detailLoading,   setDetailLoading]   = useState(false)
     const [selectedExpense, setSelectedExpense] = useState(null)
     const [refreshKey,      setRefreshKey]      = useState(0)
+    const [hidePast,        setHidePast]        = useState(false)
 
     const detailRef = useRef(null)
 
@@ -264,23 +269,34 @@ export function Dashboard() {
     const generatedByRecurringId = useMemo(() => {
         const map = {}
         for (const e of expenses) {
-            if (e.recurring_id == null) continue
+            if (!e.recurring_id) continue
             if (!map[e.recurring_id]) map[e.recurring_id] = {}
             map[e.recurring_id][e.purchase_date.substring(0, 7)] = e
         }
         return map
     }, [expenses])
 
-    const regularExpenses = useMemo(() =>
-        expenses
-            .filter(e => e.recurring_id == null)
-            .sort((a, b) => b.purchase_date.localeCompare(a.purchase_date)),
-        [expenses]
-    )
-
     const recurringDefs = useMemo(() =>
         [...recurring].sort((a, b) => a.merchant.localeCompare(b.merchant)),
         [recurring]
+    )
+
+    // Merchants tracked by a recurring definition — manually-entered expenses
+    // for these merchants are hidden from the regular section to avoid duplication
+    // with the recurring rows (estimated or generated).
+    // Normalize for comparison: lowercase, trim, strip trailing punctuation.
+    const normMerchant = s => s.toLowerCase().trim().replace(/[\s.,-]+$/, '')
+
+    const recurringMerchants = useMemo(() =>
+        new Set(recurringDefs.map(d => normMerchant(d.merchant))),
+        [recurringDefs]
+    )
+
+    const regularExpenses = useMemo(() =>
+        expenses
+            .filter(e => !e.recurring_id && !recurringMerchants.has(normMerchant(e.merchant)))
+            .sort((a, b) => b.purchase_date.localeCompare(a.purchase_date)),
+        [expenses, recurringMerchants]
     )
 
     function recurringAmounts(def) {
@@ -292,6 +308,7 @@ export function Dashboard() {
             const isPast = selectedYear < currentYear ||
                            (selectedYear === currentYear && mo < currentMonth)
             if (isPast) return { value: 0, estimated: false }
+            if (def.currency === 'ARS') return { value: def.amount_ars ?? 0, estimated: false }
             return { value: def.amount_usd * rate, estimated: true }
         })
     }
@@ -415,6 +432,16 @@ export function Dashboard() {
                                 className="text-xs text-blue-600 hover:underline ml-1">Hoy</button>
                     )}
                 </div>
+
+                <label className="ml-auto flex items-center gap-2 cursor-pointer select-none">
+                    <input
+                        type="checkbox"
+                        checked={hidePast}
+                        onChange={e => setHidePast(e.target.checked)}
+                        className="h-4 w-4 rounded border-gray-300"
+                    />
+                    <span className="text-xs font-medium text-gray-500">Ocultar meses anteriores</span>
+                </label>
             </div>
 
             {/* ── TOP: Summary matrix ── */}
@@ -426,6 +453,7 @@ export function Dashboard() {
                 currentYear={currentYear}
                 currentMonth={currentMonth}
                 onCardClick={handleCardRowClick}
+                hidePast={hidePast}
             />
 
             {/* ── BOTTOM: Expense detail matrix ── */}
@@ -445,6 +473,11 @@ export function Dashboard() {
                     <p className="text-center text-gray-400 py-6 text-sm">Cargando detalle…</p>
                 ) : (
                     <div className="overflow-x-auto rounded-xl border border-gray-200 shadow-sm">
+                        {(() => {
+                        const detailMonths = MONTHS_SHORT
+                            .map((name, i) => ({ name, i, month: i + 1 }))
+                            .filter(({ month }) => !hidePast || !isPastMonth(month))
+                        return (
                         <table className="border-collapse" style={{ width: 'max-content', minWidth: '100%' }}>
                             <thead>
                                 <tr className="border-b-2 border-gray-200">
@@ -460,10 +493,10 @@ export function Dashboard() {
                                         style={{ left: W_DATE + W_MERCHANT, width: W_CARD, minWidth: W_CARD }}>
                                         Tarjeta
                                     </th>
-                                    {MONTHS_SHORT.map((name, i) => (
+                                    {detailMonths.map(({ name, i, month }) => (
                                         <th key={i}
                                             className={`text-right px-2 py-2.5 text-xs font-bold uppercase tracking-wide whitespace-nowrap ${
-                                                isCurMonth(i + 1) ? 'bg-blue-50 text-blue-700' : isPastMonth(i + 1) ? 'bg-gray-100 text-gray-300' : 'bg-gray-50 text-gray-400'
+                                                isCurMonth(month) ? 'bg-blue-50 text-blue-700' : isPastMonth(month) ? 'bg-gray-100 text-gray-300' : 'bg-gray-50 text-gray-400'
                                             }`}
                                             style={{ width: W_MONTH, minWidth: W_MONTH }}>
                                             {name}
@@ -481,12 +514,12 @@ export function Dashboard() {
                                         style={{ left: W_DATE }}>Total</td>
                                     <td className="sticky z-10 bg-gray-900 border-r border-gray-700 px-3 py-3"
                                         style={{ left: W_DATE + W_MERCHANT }} />
-                                    {monthlyTotals.map((total, i) => (
+                                    {detailMonths.map(({ i, month }) => (
                                         <td key={i}
                                             className={`px-2 py-3 text-right text-sm font-bold whitespace-nowrap tabular-nums ${
-                                                isCurMonth(i + 1) ? 'bg-gray-800' : 'bg-gray-900'
-                                            } ${total > 0 ? (isPastMonth(i + 1) ? 'text-gray-500' : 'text-white') : 'text-gray-700'}`}>
-                                            {total > 0 ? `$${fmt(total)}` : ''}
+                                                isCurMonth(month) ? 'bg-gray-800' : 'bg-gray-900'
+                                            } ${monthlyTotals[i] > 0 ? (isPastMonth(month) ? 'text-gray-500' : 'text-white') : 'text-gray-700'}`}>
+                                            {monthlyTotals[i] > 0 ? `$${fmt(monthlyTotals[i])}` : ''}
                                         </td>
                                     ))}
                                 </tr>
@@ -510,14 +543,17 @@ export function Dashboard() {
                                                 style={{ left: W_DATE + W_MERCHANT, maxWidth: W_CARD }}>
                                                 <span className="block truncate">{cardLabel}</span>
                                             </td>
-                                            {amounts.map((cell, i) => (
+                                            {detailMonths.map(({ i, month }) => {
+                                                const cell = amounts[i]
+                                                return (
                                                 <td key={i}
                                                     className={`px-2 py-2 text-right text-sm whitespace-nowrap tabular-nums group-hover:bg-orange-50/60 ${
-                                                        isCurMonth(i + 1) ? 'bg-blue-50 group-hover:bg-blue-100/30' : isPastMonth(i + 1) ? 'bg-gray-100/60' : ''
-                                                    } ${cell.estimated ? 'text-orange-400' : cell.value > 0 ? (isPastMonth(i + 1) ? 'text-gray-400 font-medium' : 'text-gray-800 font-medium') : ''}`}>
+                                                        isCurMonth(month) ? 'bg-blue-50 group-hover:bg-blue-100/30' : isPastMonth(month) ? 'bg-gray-100/60' : ''
+                                                    } ${cell.estimated ? 'text-orange-400' : cell.value > 0 ? (isPastMonth(month) ? 'text-gray-400 font-medium' : 'text-gray-800 font-medium') : ''}`}>
                                                     {cell.value > 0 ? `${cell.estimated ? '~' : ''}$${fmt(cell.value)}` : ''}
                                                 </td>
-                                            ))}
+                                                )
+                                            })}
                                         </tr>
                                     )
                                 })}
@@ -553,9 +589,10 @@ export function Dashboard() {
                                             </td>
 
                                             {/* Month amount cells — click opens inline editor */}
-                                            {amounts.map((amount, i) => {
+                                            {detailMonths.map(({ i, month }) => {
+                                                const amount    = amounts[i]
                                                 const isEditing = editingCell?.expense?.id === e.id && editingCell?.monthIdx === i
-                                                const bgCls = isCurMonth(i + 1) ? 'bg-blue-50' : isPastMonth(i + 1) ? 'bg-gray-100/60' : ''
+                                                const bgCls     = isCurMonth(month) ? 'bg-blue-50' : isPastMonth(month) ? 'bg-gray-100/60' : ''
 
                                                 if (isEditing) {
                                                     return (
@@ -594,7 +631,7 @@ export function Dashboard() {
                                                     <td key={i}
                                                         onClick={() => startEdit(e, i)}
                                                         className={`px-2 py-2 text-right text-sm whitespace-nowrap tabular-nums cursor-pointer group-hover:bg-gray-100 group/cell ${
-                                                            isCurMonth(i + 1) ? 'bg-blue-50 group-hover:bg-blue-100/50' : isPastMonth(i + 1) ? 'bg-gray-100/60' : ''
+                                                            isCurMonth(month) ? 'bg-blue-50 group-hover:bg-blue-100/50' : isPastMonth(month) ? 'bg-gray-100/60' : ''
                                                         } ${amount > 0 ? getAmountTextClass(e, i) : ''}`}>
                                                         {amount > 0
                                                             ? `$${fmt(amount)}`
@@ -617,6 +654,7 @@ export function Dashboard() {
                                 )}
                             </tbody>
                         </table>
+                        )})()}
                     </div>
                 )}
             </div>

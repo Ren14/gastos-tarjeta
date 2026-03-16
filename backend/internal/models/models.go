@@ -49,6 +49,8 @@ type RecurringExpense struct {
 	CategoryID *int      `json:"category_id"`
 	Merchant   string    `json:"merchant"`
 	AmountUSD  float64   `json:"amount_usd"`
+	AmountARS  *float64  `json:"amount_ars"`
+	Currency   string    `json:"currency"`
 	Active     bool      `json:"active"`
 	CreatedAt  time.Time `json:"created_at"`
 }

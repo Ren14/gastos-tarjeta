@@ -104,7 +104,7 @@ func manualExport(ctx context.Context) (string, error) {
 		},
 		{
 			"recurring_expenses",
-			"SELECT id, card_id, category_id, merchant, amount_usd::float8, active, created_at FROM recurring_expenses ORDER BY id",
+			"SELECT id, card_id, category_id, merchant, amount_usd::float8, active, created_at, currency, amount_ars::float8 FROM recurring_expenses ORDER BY id",
 		},
 		{
 			"expenses",

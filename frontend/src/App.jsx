@@ -9,18 +9,20 @@ import { AuthProvider, useAuth } from './context/AuthContext'
 import { setOnUnauthorized } from './api/client'
 
 const NAV_ITEMS = [
-    { id: 'load',       label: '+ Cargar gasto' },
-    { id: 'dashboard',  label: '📊 Resumen' },
-    { id: 'flujo',      label: '💰 Flujo' },
-    { id: 'cards',      label: '💳 Tarjetas' },
-    { id: 'recurring',  label: '🔁 Recurrentes' },
-    { id: 'categories', label: '🗂️ Categorías' },
-    { id: 'cotizacion', label: '💵 Cotización USD' },
-    { id: 'backup',     label: '💾 Backup' },
+    { id: 'load',       icon: '+',   label: 'Cargar gasto' },
+    { id: 'dashboard',  icon: '📊',  label: 'Resumen' },
+    { id: 'flujo',      icon: '💰',  label: 'Flujo' },
+    { id: 'cards',      icon: '💳',  label: 'Tarjetas' },
+    { id: 'recurring',  icon: '🔁',  label: 'Recurrentes' },
+    { id: 'categories', icon: '🗂️', label: 'Categorías' },
+    { id: 'cotizacion', icon: '💵',  label: 'Cotización USD' },
+    { id: 'backup',     icon: '💾',  label: 'Backup' },
 ]
 
-// Pages that should stay narrow (forms / config)
 const NARROW_PAGES = new Set(['load', 'cards', 'recurring', 'categories', 'cotizacion', 'backup'])
+
+const SIDEBAR_W = 240
+const RAIL_W    = 60
 
 export default function App() {
     return (
@@ -32,11 +34,11 @@ export default function App() {
 
 function AppContent() {
     const { token, logout } = useAuth()
-    const [activeTab, setActiveTab] = useState('dashboard')
-    const [drawerOpen, setDrawerOpen] = useState(false)
-    const [savedCount, setSavedCount] = useState(0)
+    const [activeTab,        setActiveTab]        = useState('dashboard')
+    const [drawerOpen,       setDrawerOpen]       = useState(false)
+    const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+    const [savedCount,       setSavedCount]       = useState(0)
 
-    // Wire up 401 → logout
     setOnUnauthorized(logout)
 
     if (!token) return <Login />
@@ -46,12 +48,17 @@ function AppContent() {
         setDrawerOpen(false)
     }
 
-    const activeLabel = NAV_ITEMS.find(i => i.id === activeTab)?.label ?? ''
+    const activeItem  = NAV_ITEMS.find(i => i.id === activeTab)
+    const activeLabel = activeItem ? `${activeItem.icon} ${activeItem.label}` : ''
+
+    // On desktop: width animates between full and rail.
+    // On mobile: sidebar is fixed-position overlay, width is always full.
+    const desktopW = sidebarCollapsed ? RAIL_W : SIDEBAR_W
 
     return (
-        <div className="min-h-screen bg-stone-100 md:flex">
+        <div className="min-h-screen bg-stone-100 flex">
 
-            {/* Mobile overlay — hidden on md+ */}
+            {/* Mobile overlay */}
             <div
                 className={`fixed inset-0 bg-black/40 z-40 md:hidden transition-opacity duration-300 ${
                     drawerOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
@@ -59,54 +66,115 @@ function AppContent() {
                 onClick={() => setDrawerOpen(false)}
             />
 
-            {/* Sidebar — drawer on mobile, permanent on md+ */}
-            <aside className={[
-                'fixed md:sticky md:top-0',
-                'top-0 left-0 h-full md:h-screen',
-                'w-60 xl:w-64 flex-shrink-0',
-                'bg-white border-r border-gray-200',
-                'z-50 md:z-auto shadow-2xl md:shadow-none',
-                'flex flex-col',
-                'transition-transform duration-300 ease-in-out',
-                drawerOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0',
-            ].join(' ')}>
-                <div className="px-4 xl:px-5 pt-8 pb-6 flex-1 overflow-y-auto">
-                    <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-5">
+            {/* Sidebar */}
+            <aside
+                className={[
+                    // Position: overlay on mobile, sticky on desktop
+                    'fixed md:sticky md:top-0',
+                    'top-0 left-0 h-full md:h-screen',
+                    'bg-white border-r border-gray-200',
+                    'z-50 md:z-auto shadow-2xl md:shadow-none',
+                    'flex flex-col flex-shrink-0 overflow-hidden',
+                    // Mobile: slide in/out via transform
+                    // Desktop: no translate, width drives collapse
+                    drawerOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0',
+                ].join(' ')}
+                style={{
+                    width:    desktopW,
+                    minWidth: desktopW,
+                    transition: 'width 300ms ease-in-out, transform 300ms ease-in-out',
+                }}
+            >
+                {/* Nav items */}
+                <div className="flex-1 overflow-y-auto overflow-x-hidden pt-8 pb-2">
+                    {/* "Gastos" heading — hidden when collapsed */}
+                    <p
+                        className="px-4 text-xs font-bold text-gray-400 uppercase tracking-widest mb-5 whitespace-nowrap overflow-hidden transition-opacity duration-200"
+                        style={{ opacity: sidebarCollapsed ? 0 : 1, height: sidebarCollapsed ? 0 : undefined, marginBottom: sidebarCollapsed ? 0 : undefined }}
+                    >
                         Gastos
                     </p>
-                    <nav className="flex flex-col gap-1">
+
+                    <nav className="flex flex-col gap-0.5 px-2">
                         {NAV_ITEMS.map(item => (
                             <button
                                 key={item.id}
                                 onClick={() => navigate(item.id)}
-                                className={`text-left px-3 py-2.5 rounded-xl text-sm font-semibold transition-colors ${
+                                title={sidebarCollapsed ? item.label : undefined}
+                                className={[
+                                    'flex items-center rounded-xl text-sm font-semibold transition-colors whitespace-nowrap',
+                                    sidebarCollapsed ? 'justify-center px-2 py-2.5 gap-0' : 'px-3 py-2.5 gap-3',
                                     activeTab === item.id
                                         ? 'bg-gray-900 text-white'
-                                        : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900'
-                                }`}
+                                        : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900',
+                                ].join(' ')}
                             >
-                                {item.label}
+                                <span className="text-base leading-none flex-shrink-0 select-none">{item.icon}</span>
+                                <span
+                                    className="overflow-hidden transition-[max-width,opacity] duration-300 ease-in-out"
+                                    style={{
+                                        maxWidth:  sidebarCollapsed ? 0 : 180,
+                                        opacity:   sidebarCollapsed ? 0 : 1,
+                                        marginLeft: sidebarCollapsed ? 0 : undefined,
+                                    }}
+                                >
+                                    {item.label}
+                                </span>
                             </button>
                         ))}
                     </nav>
                 </div>
-                <div className="px-4 xl:px-5 pb-6 border-t border-gray-100 pt-4">
+
+                {/* Footer: logout + desktop toggle */}
+                <div className="border-t border-gray-100 px-2 pt-3 pb-4 flex flex-col gap-0.5">
+                    {/* Logout */}
                     <button
                         onClick={logout}
-                        className="w-full text-left px-3 py-2.5 rounded-xl text-sm font-semibold text-gray-400 hover:bg-gray-100 hover:text-gray-700 transition-colors"
+                        title={sidebarCollapsed ? 'Cerrar sesión' : undefined}
+                        className={[
+                            'flex items-center rounded-xl text-sm font-semibold text-gray-400 hover:bg-gray-100 hover:text-gray-700 transition-colors whitespace-nowrap',
+                            sidebarCollapsed ? 'justify-center px-2 py-2.5 gap-0' : 'px-3 py-2.5 gap-3',
+                        ].join(' ')}
                     >
-                        🚪 Cerrar sesión
+                        <span className="text-base leading-none flex-shrink-0 select-none">🚪</span>
+                        <span
+                            className="overflow-hidden transition-[max-width,opacity] duration-300 ease-in-out"
+                            style={{ maxWidth: sidebarCollapsed ? 0 : 180, opacity: sidebarCollapsed ? 0 : 1 }}
+                        >
+                            Cerrar sesión
+                        </span>
+                    </button>
+
+                    {/* Desktop-only collapse toggle */}
+                    <button
+                        onClick={() => setSidebarCollapsed(c => !c)}
+                        title={sidebarCollapsed ? 'Expandir menú' : 'Colapsar menú'}
+                        className={[
+                            'hidden md:flex items-center rounded-xl text-xs font-bold text-gray-300 hover:bg-gray-100 hover:text-gray-500 transition-colors whitespace-nowrap',
+                            sidebarCollapsed ? 'justify-center px-2 py-2 gap-0' : 'px-3 py-2 gap-2',
+                        ].join(' ')}
+                        aria-label={sidebarCollapsed ? 'Expandir sidebar' : 'Colapsar sidebar'}
+                    >
+                        <span className="text-sm leading-none select-none">
+                            {sidebarCollapsed ? '›' : '‹'}
+                        </span>
+                        <span
+                            className="overflow-hidden transition-[max-width,opacity] duration-300 ease-in-out"
+                            style={{ maxWidth: sidebarCollapsed ? 0 : 120, opacity: sidebarCollapsed ? 0 : 1 }}
+                        >
+                            Colapsar
+                        </span>
                     </button>
                 </div>
             </aside>
 
-            {/* Main area */}
+            {/* Main area — flex-1 so it fills space next to the sticky sidebar */}
             <div className="flex-1 min-w-0 overflow-x-hidden">
                 <div className={`px-4 md:px-8 xl:px-10 2xl:px-14 pt-5 md:pt-8 pb-24 ${
                     NARROW_PAGES.has(activeTab) ? 'max-w-md mx-auto md:max-w-none md:mx-0' : ''
                 }`}>
 
-                    {/* Top bar — hamburger + label on mobile only */}
+                    {/* Top bar — hamburger + label, mobile only */}
                     <div className="flex items-center gap-3 mb-6 md:hidden">
                         <button
                             onClick={() => setDrawerOpen(true)}
@@ -132,10 +200,8 @@ function AppContent() {
                             }} />
                         </div>
                     )}
-                    {activeTab === 'dashboard' && (
-                        <Dashboard key={savedCount} />
-                    )}
-                    {activeTab === 'flujo' && <Flujo />}
+                    {activeTab === 'dashboard'  && <Dashboard key={savedCount} />}
+                    {activeTab === 'flujo'      && <Flujo />}
                     {activeTab === 'cards'      && <div className="md:max-w-lg"><CardsPage /></div>}
                     {activeTab === 'recurring'  && <div className="md:max-w-lg"><RecurringPage /></div>}
                     {activeTab === 'categories' && <div className="md:max-w-lg"><CategoriesPage /></div>}
