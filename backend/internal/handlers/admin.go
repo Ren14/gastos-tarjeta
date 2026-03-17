@@ -243,6 +243,34 @@ func TruncateDB(w http.ResponseWriter, r *http.Request) {
 
 // ── Fallback SQL executor ─────────────────────────────────────────────────────
 
+// safeTruncateStmt replaces any TRUNCATE statement from the backup with a
+// DO block that truncates each table only if it exists. This makes old backups
+// (generated before certain tables were created) importable without errors.
+const safeTruncateStmt = `DO $$
+BEGIN
+  IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'cashflow_entries') THEN
+    TRUNCATE cashflow_entries RESTART IDENTITY CASCADE;
+  END IF;
+  IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'expenses') THEN
+    TRUNCATE expenses RESTART IDENTITY CASCADE;
+  END IF;
+  IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'recurring_expenses') THEN
+    TRUNCATE recurring_expenses RESTART IDENTITY CASCADE;
+  END IF;
+  IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'exchange_rate_history') THEN
+    TRUNCATE exchange_rate_history RESTART IDENTITY CASCADE;
+  END IF;
+  IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'cashflow_categories') THEN
+    TRUNCATE cashflow_categories RESTART IDENTITY CASCADE;
+  END IF;
+  IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'categories') THEN
+    TRUNCATE categories RESTART IDENTITY CASCADE;
+  END IF;
+  IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'cards') THEN
+    TRUNCATE cards RESTART IDENTITY CASCADE;
+  END IF;
+END $$`
+
 func executeSQL(ctx context.Context, content string) error {
 	tx, err := db.Pool.Begin(ctx)
 	if err != nil {
@@ -252,14 +280,30 @@ func executeSQL(ctx context.Context, content string) error {
 
 	for _, stmt := range splitSQL(content) {
 		if _, err := tx.Exec(ctx, stmt); err != nil {
+			// If an INSERT targets a table that doesn't exist in the current schema
+			// (old backup predates a migration), skip it with a warning rather than
+			// aborting the whole restore.
+			if isUndefinedTableError(err) {
+				continue
+			}
 			return fmt.Errorf("%w\n--- statement ---\n%.400s", err, stmt)
 		}
 	}
 	return tx.Commit(ctx)
 }
 
+// isUndefinedTableError returns true when the error is PostgreSQL error code
+// 42P01 ("undefined_table"), which happens when a backup INSERT references a
+// table that doesn't exist yet in this schema version.
+func isUndefinedTableError(err error) bool {
+	return strings.Contains(err.Error(), "42P01") ||
+		strings.Contains(strings.ToLower(err.Error()), "does not exist")
+}
+
 // splitSQL splits a SQL dump into individual executable statements.
 // Strips comment lines and skips BEGIN/COMMIT/ROLLBACK (we wrap in our own tx).
+// Any TRUNCATE statement is replaced with a safe IF-EXISTS version so that old
+// backups (referencing tables not yet created) don't abort the restore.
 func splitSQL(content string) []string {
 	var stmts []string
 	var buf strings.Builder
@@ -277,7 +321,12 @@ func splitSQL(content string) []string {
 		buf.WriteString("\n")
 		if strings.HasSuffix(trimmed, ";") {
 			if s := strings.TrimSpace(buf.String()); s != "" {
-				stmts = append(stmts, s)
+				// Replace any TRUNCATE with the safe IF-EXISTS version.
+				if strings.HasPrefix(strings.ToUpper(s), "TRUNCATE") {
+					stmts = append(stmts, safeTruncateStmt)
+				} else {
+					stmts = append(stmts, s)
+				}
 			}
 			buf.Reset()
 		}

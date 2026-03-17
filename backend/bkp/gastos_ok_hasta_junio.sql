@@ -1,5 +1,5 @@
 -- gastos-tarjeta backup
--- Generated: 2026-03-16 23:59:15 UTC
+-- Generated: 2026-03-17 00:08:26 UTC
 
 BEGIN;
 
