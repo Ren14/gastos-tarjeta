@@ -1,17 +1,17 @@
 -- gastos-tarjeta backup
--- Generated: 2026-03-16 03:30:03 UTC
+-- Generated: 2026-03-16 23:59:15 UTC
 
 BEGIN;
 
 TRUNCATE cashflow_entries, expenses, recurring_expenses, exchange_rate_history, cashflow_categories, categories, cards RESTART IDENTITY CASCADE;
 
 -- cards
-INSERT INTO cards (id, name, bank, card_type, color_hex, active, created_at) VALUES (1, 'BBVA Pame', '', 'VISA', '#6b7280', TRUE, '2026-03-13T03:47:39.692952Z');
-INSERT INTO cards (id, name, bank, card_type, color_hex, active, created_at) VALUES (2, 'V San Rio', '', 'VISA', '#6b7280', TRUE, '2026-03-13T03:47:39.695244Z');
-INSERT INTO cards (id, name, bank, card_type, color_hex, active, created_at) VALUES (3, 'VISA Supervielle', '', 'VISA', '#6b7280', TRUE, '2026-03-13T03:47:39.697776Z');
+INSERT INTO cards (id, name, bank, card_type, color_hex, active, created_at) VALUES (1, 'BBVA VISA Pame', '', 'VISA', '#6b7280', TRUE, '2026-03-13T03:47:39.692952Z');
+INSERT INTO cards (id, name, bank, card_type, color_hex, active, created_at) VALUES (2, 'Santander VISA', 'Santander', 'VISA', '#ff0000', TRUE, '2026-03-13T03:47:39.695244Z');
+INSERT INTO cards (id, name, bank, card_type, color_hex, active, created_at) VALUES (3, 'Supervielle VISA', '', 'VISA', '#f23   ', TRUE, '2026-03-13T03:47:39.697776Z');
 INSERT INTO cards (id, name, bank, card_type, color_hex, active, created_at) VALUES (4, 'Mercado Pago', '', 'VISA', '#6b7280', TRUE, '2026-03-13T03:47:39.698765Z');
-INSERT INTO cards (id, name, bank, card_type, color_hex, active, created_at) VALUES (5, 'Nacion MC', '', 'VISA', '#6b7280', TRUE, '2026-03-13T03:47:39.701005Z');
-INSERT INTO cards (id, name, bank, card_type, color_hex, active, created_at) VALUES (6, 'AMEX', '', 'VISA', '#6b7280', TRUE, '2026-03-13T03:47:39.707696Z');
+INSERT INTO cards (id, name, bank, card_type, color_hex, active, created_at) VALUES (5, 'BNA MasterCard', '', 'VISA', '#ff0   ', TRUE, '2026-03-13T03:47:39.701005Z');
+INSERT INTO cards (id, name, bank, card_type, color_hex, active, created_at) VALUES (6, 'Santander AMEX', '', 'VISA', '#ff0000', TRUE, '2026-03-13T03:47:39.707696Z');
 INSERT INTO cards (id, name, bank, card_type, color_hex, active, created_at) VALUES (7, 'BNA VISA', 'Banco Nación', 'VISA', '#6366f1', TRUE, '2026-03-13T03:50:49.92433Z');
 
 -- categories
@@ -54,17 +54,17 @@ INSERT INTO cashflow_categories (id, name, type, sort_order, active, created_at)
 INSERT INTO exchange_rate_history (id, month, year, usd_to_ars, notes, created_at) VALUES (1, 3, 2026, 1420, NULL, '2026-03-16T02:36:08.14518Z');
 
 -- recurring_expenses
-INSERT INTO recurring_expenses (id, card_id, category_id, merchant, amount_usd, active, created_at) VALUES (1, 2, 1, 'Spotify', 3.84, TRUE, '2026-03-16T02:34:07.845299Z');
-INSERT INTO recurring_expenses (id, card_id, category_id, merchant, amount_usd, active, created_at) VALUES (2, 2, 1, 'Youtube Premium', 4.92, TRUE, '2026-03-16T02:34:27.581062Z');
-INSERT INTO recurring_expenses (id, card_id, category_id, merchant, amount_usd, active, created_at) VALUES (3, 2, 2, 'Google One', 2, TRUE, '2026-03-16T02:34:43.277528Z');
-INSERT INTO recurring_expenses (id, card_id, category_id, merchant, amount_usd, active, created_at) VALUES (4, 2, 2, 'Apple storage', 10, TRUE, '2026-03-16T02:34:57.096963Z');
-INSERT INTO recurring_expenses (id, card_id, category_id, merchant, amount_usd, active, created_at) VALUES (5, 2, 2, 'Claude', 20, TRUE, '2026-03-16T02:35:12.159833Z');
-INSERT INTO recurring_expenses (id, card_id, category_id, merchant, amount_usd, active, created_at) VALUES (6, 2, 2, 'Google One (Ren)', 2, TRUE, '2026-03-16T02:35:36.411843Z');
-INSERT INTO recurring_expenses (id, card_id, category_id, merchant, amount_usd, active, created_at) VALUES (7, 2, 1, 'Netflix', 6.3, TRUE, '2026-03-16T02:35:56.709825Z');
-INSERT INTO recurring_expenses (id, card_id, category_id, merchant, amount_usd, active, created_at) VALUES (8, 2, 3, 'Pedidos ya', 0, TRUE, '2026-03-16T02:51:36.906431Z');
-INSERT INTO recurring_expenses (id, card_id, category_id, merchant, amount_usd, active, created_at) VALUES (9, 2, 3, 'Seguro auto', 0, TRUE, '2026-03-16T02:52:16.155812Z');
-INSERT INTO recurring_expenses (id, card_id, category_id, merchant, amount_usd, active, created_at) VALUES (10, 2, 3, 'Meli', 0, TRUE, '2026-03-16T02:52:29.076503Z');
-INSERT INTO recurring_expenses (id, card_id, category_id, merchant, amount_usd, active, created_at) VALUES (11, 2, 3, 'Federación Patronal', 0, TRUE, '2026-03-16T02:52:49.07123Z');
+INSERT INTO recurring_expenses (id, card_id, category_id, merchant, amount_usd, active, created_at, currency, amount_ars) VALUES (1, 2, 1, 'Spotify', 3.84, TRUE, '2026-03-16T02:34:07.845299Z', 'USD', NULL);
+INSERT INTO recurring_expenses (id, card_id, category_id, merchant, amount_usd, active, created_at, currency, amount_ars) VALUES (2, 2, 1, 'Youtube Premium', 4.92, TRUE, '2026-03-16T02:34:27.581062Z', 'USD', NULL);
+INSERT INTO recurring_expenses (id, card_id, category_id, merchant, amount_usd, active, created_at, currency, amount_ars) VALUES (3, 2, 2, 'Google One', 2, TRUE, '2026-03-16T02:34:43.277528Z', 'USD', NULL);
+INSERT INTO recurring_expenses (id, card_id, category_id, merchant, amount_usd, active, created_at, currency, amount_ars) VALUES (4, 2, 2, 'Apple storage', 10, TRUE, '2026-03-16T02:34:57.096963Z', 'USD', NULL);
+INSERT INTO recurring_expenses (id, card_id, category_id, merchant, amount_usd, active, created_at, currency, amount_ars) VALUES (5, 2, 2, 'Claude', 20, TRUE, '2026-03-16T02:35:12.159833Z', 'USD', NULL);
+INSERT INTO recurring_expenses (id, card_id, category_id, merchant, amount_usd, active, created_at, currency, amount_ars) VALUES (6, 2, 2, 'Google One (Ren)', 2, TRUE, '2026-03-16T02:35:36.411843Z', 'USD', NULL);
+INSERT INTO recurring_expenses (id, card_id, category_id, merchant, amount_usd, active, created_at, currency, amount_ars) VALUES (7, 2, 1, 'Netflix', 6.3, TRUE, '2026-03-16T02:35:56.709825Z', 'USD', NULL);
+INSERT INTO recurring_expenses (id, card_id, category_id, merchant, amount_usd, active, created_at, currency, amount_ars) VALUES (8, 2, 3, 'Pedidos ya', 0, TRUE, '2026-03-16T02:51:36.906431Z', 'ARS', 5990);
+INSERT INTO recurring_expenses (id, card_id, category_id, merchant, amount_usd, active, created_at, currency, amount_ars) VALUES (9, 2, 3, 'Seguro auto', 0, TRUE, '2026-03-16T02:52:16.155812Z', 'ARS', 113469);
+INSERT INTO recurring_expenses (id, card_id, category_id, merchant, amount_usd, active, created_at, currency, amount_ars) VALUES (10, 2, 3, 'Meli', 0, TRUE, '2026-03-16T02:52:29.076503Z', 'ARS', 3490);
+INSERT INTO recurring_expenses (id, card_id, category_id, merchant, amount_usd, active, created_at, currency, amount_ars) VALUES (11, 2, 3, 'Federación Patronal', 0, TRUE, '2026-03-16T02:52:49.07123Z', 'ARS', 58363);
 
 -- expenses
 INSERT INTO expenses (id, card_id, category_id, merchant, total_amount, installments, purchase_date, notes, color, created_at, recurring_id) VALUES (1, 1, NULL, 'Almoahadas 12C BBVA PAME Empieza Abril, termina Marzo 2027', 157500, 9, '2026-03-13', NULL, NULL, '2026-03-13T03:47:39.694104Z', NULL);

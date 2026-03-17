@@ -25,8 +25,11 @@ func GetRecurring(w http.ResponseWriter, r *http.Request) {
 	items := []models.RecurringExpense{}
 	for rows.Next() {
 		var re models.RecurringExpense
-		rows.Scan(&re.ID, &re.CardID, &re.CategoryID, &re.Merchant,
-			&re.AmountUSD, &re.AmountARS, &re.Currency, &re.Active, &re.CreatedAt)
+		if err := rows.Scan(&re.ID, &re.CardID, &re.CategoryID, &re.Merchant,
+			&re.AmountUSD, &re.AmountARS, &re.Currency, &re.Active, &re.CreatedAt); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 		items = append(items, re)
 	}
 
