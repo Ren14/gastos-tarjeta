@@ -13,12 +13,12 @@ export function MonthNav({ month, year, onChange }) {
     }
 
     return (
-        <div className="flex justify-between items-center px-4 py-3 bg-white border border-gray-200 rounded-xl mb-4">
-            <button onClick={prev} className="text-gray-500 text-xl font-bold px-2">‹</button>
+        <div className="flex justify-between items-center px-4 py-3 bg-white dark:bg-gray-800 dark:border-gray-700 dark:text-gray-100 border border-gray-200 rounded-xl mb-4">
+            <button onClick={prev} className="text-gray-500 dark:text-gray-400 text-xl font-bold px-2">‹</button>
             <span className="font-bold text-sm tracking-wide uppercase">
         {MONTHS[month - 1]} {year}
       </span>
-            <button onClick={next} className="text-gray-500 text-xl font-bold px-2">›</button>
+            <button onClick={next} className="text-gray-500 dark:text-gray-400 text-xl font-bold px-2">›</button>
         </div>
     )
 }

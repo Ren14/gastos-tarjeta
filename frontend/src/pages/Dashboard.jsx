@@ -108,11 +108,11 @@ function SummaryMatrix({ projection, projLoading, selectedYear, selectedCardId, 
     }
 
     return (
-        <div className="overflow-x-auto rounded-xl border border-gray-200 shadow-sm">
+        <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
             <table className="border-collapse" style={{ width: 'max-content', minWidth: '100%' }}>
                 <thead>
-                    <tr className="border-b-2 border-gray-200">
-                        <th className="sticky left-0 z-20 bg-gray-50 border-r border-gray-200 text-left px-4 py-2.5 text-xs font-bold text-gray-400 uppercase tracking-wide whitespace-nowrap"
+                    <tr className="border-b-2 border-gray-200 dark:border-gray-700">
+                        <th className="sticky left-0 z-20 bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 text-left px-4 py-2.5 text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wide whitespace-nowrap"
                             style={{ minWidth: W_DATE + W_MERCHANT + W_CARD }}>
                             Tarjeta
                         </th>
@@ -121,7 +121,7 @@ function SummaryMatrix({ projection, projLoading, selectedYear, selectedCardId, 
                             return (
                                 <th key={i}
                                     className={`text-right px-3 py-2.5 text-xs font-bold uppercase tracking-wide whitespace-nowrap ${
-                                        isCur(month) ? 'bg-blue-50 text-blue-700' : isPast(month) ? 'bg-gray-100 text-gray-300' : 'bg-gray-50 text-gray-400'
+                                        isCur(month) ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300' : isPast(month) ? 'bg-gray-100 dark:bg-gray-800 text-gray-300 dark:text-gray-600' : 'bg-gray-50 dark:bg-gray-900 text-gray-400 dark:text-gray-500'
                                     }`}
                                     style={{ minWidth: W_MONTH }}>
                                     {name}
@@ -160,16 +160,16 @@ function SummaryMatrix({ projection, projLoading, selectedYear, selectedCardId, 
                         return (
                             <tr key={card.card_id}
                                 onClick={() => onCardClick(card.card_id)}
-                                className={`group border-b border-gray-100 last:border-0 cursor-pointer transition-colors ${
-                                    isSelected ? 'bg-blue-50' : 'hover:bg-gray-50'
+                                className={`group border-b border-gray-100 dark:border-gray-800 last:border-0 cursor-pointer transition-colors ${
+                                    isSelected ? 'bg-blue-50 dark:bg-blue-900/20' : 'hover:bg-gray-50 dark:hover:bg-gray-800'
                                 }`}>
                                 <td className={`sticky left-0 z-10 border-r px-4 py-2.5 whitespace-nowrap transition-colors ${
                                     isSelected
-                                        ? 'bg-blue-50 border-blue-200 group-hover:bg-blue-100'
-                                        : 'bg-white border-gray-100 group-hover:bg-gray-50'
+                                        ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800 group-hover:bg-blue-100 dark:group-hover:bg-blue-900/30'
+                                        : 'bg-white dark:bg-gray-900 border-gray-100 dark:border-gray-800 group-hover:bg-gray-50 dark:group-hover:bg-gray-800'
                                 }`}
                                     style={{ borderLeft: `3px solid ${card.color_hex || '#9ca3af'}` }}>
-                                    <span className={`text-sm font-medium ${isSelected ? 'text-blue-800' : 'text-gray-800'}`}>
+                                    <span className={`text-sm font-medium ${isSelected ? 'text-blue-800 dark:text-blue-200' : 'text-gray-800 dark:text-gray-200'}`}>
                                         {card.card_name}
                                     </span>
                                 </td>
@@ -179,9 +179,9 @@ function SummaryMatrix({ projection, projLoading, selectedYear, selectedCardId, 
                                         <td key={i}
                                             className={`px-3 py-2.5 text-right text-sm whitespace-nowrap tabular-nums transition-colors ${
                                                 isCur(month)
-                                                    ? isSelected ? 'bg-blue-100' : 'bg-blue-50 group-hover:bg-blue-100/60'
-                                                    : isPast(month) ? 'bg-gray-100' : ''
-                                            } ${total === 0 ? 'text-gray-300' : isPast(month) ? 'text-gray-400 font-medium' : estimated ? 'text-orange-500' : 'text-gray-800 font-medium'}`}>
+                                                    ? isSelected ? 'bg-blue-100 dark:bg-blue-900/30' : 'bg-blue-50 dark:bg-blue-900/20 group-hover:bg-blue-100/60'
+                                                    : isPast(month) ? 'bg-gray-100 dark:bg-gray-800' : ''
+                                            } ${total === 0 ? 'text-gray-300 dark:text-gray-700' : isPast(month) ? 'text-gray-400 dark:text-gray-500 font-medium' : estimated ? 'text-orange-500' : 'text-gray-800 dark:text-gray-200 font-medium'}`}>
                                             {total > 0 && (
                                                 <>{estimated && '~'}${fmt(total)}</>
                                             )}
@@ -194,7 +194,7 @@ function SummaryMatrix({ projection, projLoading, selectedYear, selectedCardId, 
 
                     {projCards.length === 0 && (
                         <tr>
-                            <td colSpan={13} className="px-4 py-8 text-center text-sm text-gray-400">
+                            <td colSpan={13} className="px-4 py-8 text-center text-sm text-gray-400 dark:text-gray-500">
                                 No hay datos para {selectedYear}
                             </td>
                         </tr>
@@ -400,9 +400,9 @@ export function Dashboard() {
     function getAmountTextClass(expense, monthIdx) {
         if (expense.color === 'green') return 'text-green-600 font-medium'
         if (expense.color === 'blue')  return 'text-blue-600 font-medium'
-        if (expense.color === 'gray')  return 'text-gray-400 font-medium'
+        if (expense.color === 'gray')  return 'text-gray-400 dark:text-gray-500 font-medium'
         const isPresto = prestoCategoryId !== null && expense.category_id === prestoCategoryId
-        return isPresto || isPastMonth(monthIdx + 1) ? 'text-gray-400 font-medium' : 'text-gray-800 font-medium'
+        return isPresto || isPastMonth(monthIdx + 1) ? 'text-gray-400 dark:text-gray-500 font-medium' : 'text-gray-800 dark:text-gray-200 font-medium'
     }
 
     if (!cards.length) {
@@ -416,17 +416,17 @@ export function Dashboard() {
                 <select
                     value={selectedCardId ?? ''}
                     onChange={e => setSelectedCardId(Number(e.target.value))}
-                    className="px-3 py-2 border-2 border-gray-900 rounded-xl text-sm font-bold outline-none bg-white appearance-none"
+                    className="px-3 py-2 border-2 border-gray-900 dark:border-gray-400 rounded-xl text-sm font-bold outline-none bg-white dark:bg-gray-800 dark:text-gray-100 appearance-none"
                 >
                     {cards.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                 </select>
 
                 <div className="flex items-center gap-1">
                     <button onClick={() => setSelectedYear(y => y - 1)}
-                            className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-500 hover:bg-gray-200 hover:text-gray-900 transition-colors text-lg leading-none">‹</button>
-                    <span className="text-sm font-bold text-gray-800 w-12 text-center tabular-nums">{selectedYear}</span>
+                            className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100 transition-colors text-lg leading-none">‹</button>
+                    <span className="text-sm font-bold text-gray-800 dark:text-gray-200 w-12 text-center tabular-nums">{selectedYear}</span>
                     <button onClick={() => setSelectedYear(y => y + 1)}
-                            className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-500 hover:bg-gray-200 hover:text-gray-900 transition-colors text-lg leading-none">›</button>
+                            className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100 transition-colors text-lg leading-none">›</button>
                     {selectedYear !== currentYear && (
                         <button onClick={() => setSelectedYear(currentYear)}
                                 className="text-xs text-blue-600 hover:underline ml-1">Hoy</button>
@@ -440,7 +440,7 @@ export function Dashboard() {
                         onChange={e => setHidePast(e.target.checked)}
                         className="h-4 w-4 rounded border-gray-300"
                     />
-                    <span className="text-xs font-medium text-gray-500">Ocultar meses anteriores</span>
+                    <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Ocultar meses anteriores</span>
                 </label>
             </div>
 
@@ -460,19 +460,19 @@ export function Dashboard() {
             <div ref={detailRef} className="mt-6">
                 {/* Detail section header */}
                 <div className="flex items-center gap-3 mb-3">
-                    <div className="h-px flex-1 bg-gray-200" />
-                    <span className="text-xs font-bold text-gray-400 uppercase tracking-widest whitespace-nowrap">
+                    <div className="h-px flex-1 bg-gray-200 dark:bg-gray-700" />
+                    <span className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest whitespace-nowrap">
                         {selectedCard
                             ? `Detalle — ${selectedCard.name}`
                             : 'Detalle'}
                     </span>
-                    <div className="h-px flex-1 bg-gray-200" />
+                    <div className="h-px flex-1 bg-gray-200 dark:bg-gray-700" />
                 </div>
 
                 {detailLoading ? (
                     <p className="text-center text-gray-400 py-6 text-sm">Cargando detalle…</p>
                 ) : (
-                    <div className="overflow-x-auto rounded-xl border border-gray-200 shadow-sm">
+                    <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
                         {(() => {
                         const detailMonths = MONTHS_SHORT
                             .map((name, i) => ({ name, i, month: i + 1 }))
@@ -480,23 +480,23 @@ export function Dashboard() {
                         return (
                         <table className="border-collapse" style={{ width: 'max-content', minWidth: '100%' }}>
                             <thead>
-                                <tr className="border-b-2 border-gray-200">
-                                    <th className="sticky z-20 bg-gray-50 border-r border-gray-200 text-left px-3 py-2.5 text-xs font-bold text-gray-400 uppercase tracking-wide whitespace-nowrap"
+                                <tr className="border-b-2 border-gray-200 dark:border-gray-700">
+                                    <th className="sticky z-20 bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 text-left px-3 py-2.5 text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wide whitespace-nowrap"
                                         style={{ left: 0, width: W_DATE, minWidth: W_DATE }}>
                                         Fecha
                                     </th>
-                                    <th className="sticky z-20 bg-gray-50 border-r border-gray-200 text-left px-3 py-2.5 text-xs font-bold text-gray-400 uppercase tracking-wide"
+                                    <th className="sticky z-20 bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 text-left px-3 py-2.5 text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wide"
                                         style={{ left: W_DATE, width: W_MERCHANT, minWidth: W_MERCHANT }}>
                                         Comercio
                                     </th>
-                                    <th className="sticky z-20 bg-gray-50 border-r border-gray-200 text-left px-3 py-2.5 text-xs font-bold text-gray-400 uppercase tracking-wide whitespace-nowrap"
+                                    <th className="sticky z-20 bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 text-left px-3 py-2.5 text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wide whitespace-nowrap"
                                         style={{ left: W_DATE + W_MERCHANT, width: W_CARD, minWidth: W_CARD }}>
                                         Tarjeta
                                     </th>
                                     {detailMonths.map(({ name, i, month }) => (
                                         <th key={i}
                                             className={`text-right px-2 py-2.5 text-xs font-bold uppercase tracking-wide whitespace-nowrap ${
-                                                isCurMonth(month) ? 'bg-blue-50 text-blue-700' : isPastMonth(month) ? 'bg-gray-100 text-gray-300' : 'bg-gray-50 text-gray-400'
+                                                isCurMonth(month) ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300' : isPastMonth(month) ? 'bg-gray-100 dark:bg-gray-800 text-gray-300 dark:text-gray-600' : 'bg-gray-50 dark:bg-gray-900 text-gray-400 dark:text-gray-500'
                                             }`}
                                             style={{ width: W_MONTH, minWidth: W_MONTH }}>
                                             {name}
@@ -528,18 +528,18 @@ export function Dashboard() {
                                 {recurringDefs.map((def, idx) => {
                                     const amounts = recurringAmounts(def)
                                     const isEven  = idx % 2 === 0
-                                    const base    = isEven ? 'bg-white' : 'bg-orange-50/20'
+                                    const base    = isEven ? 'bg-white dark:bg-gray-900' : 'bg-orange-50/20 dark:bg-orange-900/10'
                                     return (
-                                        <tr key={def.id} className="group border-b border-gray-100">
-                                            <td className={`sticky z-10 border-r border-gray-100 px-2 py-2 text-center text-xs ${base} group-hover:bg-orange-50/60`}
+                                        <tr key={def.id} className="group border-b border-gray-100 dark:border-gray-800">
+                                            <td className={`sticky z-10 border-r border-gray-100 dark:border-gray-800 px-2 py-2 text-center text-xs ${base} group-hover:bg-orange-50/60`}
                                                 style={{ left: 0, borderLeft: '3px solid #fb923c' }}>
                                                 🔁
                                             </td>
-                                            <td className={`sticky z-10 border-r border-gray-100 px-3 py-2 text-sm font-medium text-gray-800 overflow-hidden ${base} group-hover:bg-orange-50/60`}
+                                            <td className={`sticky z-10 border-r border-gray-100 dark:border-gray-800 px-3 py-2 text-sm font-medium text-gray-800 dark:text-gray-200 overflow-hidden ${base} group-hover:bg-orange-50/60`}
                                                 style={{ left: W_DATE, maxWidth: W_MERCHANT }}>
                                                 <span className="block truncate">{def.merchant}</span>
                                             </td>
-                                            <td className={`sticky z-10 border-r border-gray-100 px-3 py-2 text-xs text-gray-400 overflow-hidden ${base} group-hover:bg-orange-50/60`}
+                                            <td className={`sticky z-10 border-r border-gray-100 dark:border-gray-800 px-3 py-2 text-xs text-gray-400 dark:text-gray-500 overflow-hidden ${base} group-hover:bg-orange-50/60`}
                                                 style={{ left: W_DATE + W_MERCHANT, maxWidth: W_CARD }}>
                                                 <span className="block truncate">{cardLabel}</span>
                                             </td>
@@ -548,8 +548,8 @@ export function Dashboard() {
                                                 return (
                                                 <td key={i}
                                                     className={`px-2 py-2 text-right text-sm whitespace-nowrap tabular-nums group-hover:bg-orange-50/60 ${
-                                                        isCurMonth(month) ? 'bg-blue-50 group-hover:bg-blue-100/30' : isPastMonth(month) ? 'bg-gray-100/60' : ''
-                                                    } ${cell.estimated ? 'text-orange-400' : cell.value > 0 ? (isPastMonth(month) ? 'text-gray-400 font-medium' : 'text-gray-800 font-medium') : ''}`}>
+                                                        isCurMonth(month) ? 'bg-blue-50 dark:bg-blue-900/20 group-hover:bg-blue-100/30' : isPastMonth(month) ? 'bg-gray-100/60 dark:bg-gray-800' : ''
+                                                    } ${cell.estimated ? 'text-orange-400' : cell.value > 0 ? (isPastMonth(month) ? 'text-gray-400 dark:text-gray-500 font-medium' : 'text-gray-800 dark:text-gray-200 font-medium') : ''}`}>
                                                     {cell.value > 0 ? `${cell.estimated ? '~' : ''}$${fmt(cell.value)}` : ''}
                                                 </td>
                                                 )
@@ -560,29 +560,29 @@ export function Dashboard() {
 
                                 {/* Divider */}
                                 {recurringDefs.length > 0 && visibleRegular.length > 0 && (
-                                    <tr><td colSpan={15} className="p-0 h-px bg-gray-200" /></tr>
+                                    <tr><td colSpan={15} className="p-0 h-px bg-gray-200 dark:bg-gray-700" /></tr>
                                 )}
 
                                 {/* Regular expense rows */}
                                 {visibleRegular.map((e, idx) => {
                                     const amounts = getYearlyAmounts(e, selectedYear)
                                     const isEven  = (recurringDefs.length + idx) % 2 === 0
-                                    const base    = isEven ? 'bg-white' : 'bg-gray-50/50'
+                                    const base    = isEven ? 'bg-white dark:bg-gray-900' : 'bg-gray-50/50 dark:bg-gray-800/50'
                                     const isPresto = prestoCategoryId !== null && e.category_id === prestoCategoryId
                                     return (
-                                        <tr key={e.id} className="group border-b border-gray-100 last:border-0">
+                                        <tr key={e.id} className="group border-b border-gray-100 dark:border-gray-800 last:border-0">
                                             {/* Sticky cells — click opens bottom sheet */}
-                                            <td className={`sticky z-10 border-r border-gray-100 px-3 py-2 text-xs text-gray-500 whitespace-nowrap tabular-nums cursor-pointer ${base} group-hover:bg-gray-100`}
+                                            <td className={`sticky z-10 border-r border-gray-100 dark:border-gray-800 px-3 py-2 text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap tabular-nums cursor-pointer ${base} group-hover:bg-gray-100 dark:group-hover:bg-gray-700`}
                                                 style={{ left: 0 }}
                                                 onClick={() => openEdit(e)}>
                                                 {fmtDate(e.purchase_date)}
                                             </td>
-                                            <td className={`sticky z-10 border-r border-gray-100 px-3 py-2 text-sm font-medium overflow-hidden cursor-pointer ${base} group-hover:bg-gray-100 ${isPresto ? 'text-gray-500' : 'text-gray-800'}`}
+                                            <td className={`sticky z-10 border-r border-gray-100 dark:border-gray-800 px-3 py-2 text-sm font-medium overflow-hidden cursor-pointer ${base} group-hover:bg-gray-100 dark:group-hover:bg-gray-700 ${isPresto ? 'text-gray-500 dark:text-gray-400' : 'text-gray-800 dark:text-gray-200'}`}
                                                 style={{ left: W_DATE, maxWidth: W_MERCHANT }}
                                                 onClick={() => openEdit(e)}>
                                                 <span className="block truncate">{e.merchant}</span>
                                             </td>
-                                            <td className={`sticky z-10 border-r border-gray-100 px-3 py-2 text-xs text-gray-400 overflow-hidden cursor-pointer ${base} group-hover:bg-gray-100`}
+                                            <td className={`sticky z-10 border-r border-gray-100 dark:border-gray-800 px-3 py-2 text-xs text-gray-400 dark:text-gray-500 overflow-hidden cursor-pointer ${base} group-hover:bg-gray-100 dark:group-hover:bg-gray-700`}
                                                 style={{ left: W_DATE + W_MERCHANT, maxWidth: W_CARD }}
                                                 onClick={() => openEdit(e)}>
                                                 <span className="block truncate">{cardLabel}</span>
@@ -592,7 +592,7 @@ export function Dashboard() {
                                             {detailMonths.map(({ i, month }) => {
                                                 const amount    = amounts[i]
                                                 const isEditing = editingCell?.expense?.id === e.id && editingCell?.monthIdx === i
-                                                const bgCls     = isCurMonth(month) ? 'bg-blue-50' : isPastMonth(month) ? 'bg-gray-100/60' : ''
+                                                const bgCls     = isCurMonth(month) ? 'bg-blue-50 dark:bg-blue-900/20' : isPastMonth(month) ? 'bg-gray-100/60 dark:bg-gray-800' : ''
 
                                                 if (isEditing) {
                                                     return (
@@ -630,8 +630,8 @@ export function Dashboard() {
                                                 return (
                                                     <td key={i}
                                                         onClick={() => startEdit(e, i)}
-                                                        className={`px-2 py-2 text-right text-sm whitespace-nowrap tabular-nums cursor-pointer group-hover:bg-gray-100 group/cell ${
-                                                            isCurMonth(month) ? 'bg-blue-50 group-hover:bg-blue-100/50' : isPastMonth(month) ? 'bg-gray-100/60' : ''
+                                                        className={`px-2 py-2 text-right text-sm whitespace-nowrap tabular-nums cursor-pointer group-hover:bg-gray-100 dark:group-hover:bg-gray-700 group/cell ${
+                                                            isCurMonth(month) ? 'bg-blue-50 dark:bg-blue-900/20 group-hover:bg-blue-100/50' : isPastMonth(month) ? 'bg-gray-100/60 dark:bg-gray-800' : ''
                                                         } ${amount > 0 ? getAmountTextClass(e, i) : ''}`}>
                                                         {amount > 0
                                                             ? `$${fmt(amount)}`
@@ -647,7 +647,7 @@ export function Dashboard() {
                                 {/* Empty state */}
                                 {visibleRegular.length === 0 && recurringDefs.length === 0 && (
                                     <tr>
-                                        <td colSpan={15} className="px-4 py-10 text-center text-sm text-gray-400">
+                                        <td colSpan={15} className="px-4 py-10 text-center text-sm text-gray-400 dark:text-gray-500">
                                             No hay gastos para {selectedCard?.name ?? ''} en {selectedYear}
                                         </td>
                                     </tr>
@@ -660,16 +660,16 @@ export function Dashboard() {
             </div>
 
             {/* Legend */}
-            <div className="flex items-center gap-4 mt-3 text-xs text-gray-400">
+            <div className="flex items-center gap-4 mt-3 text-xs text-gray-400 dark:text-gray-500">
                 <span className="flex items-center gap-1">
                     <span className="text-orange-400 font-medium">~</span>
                     estimado
                 </span>
                 <span className="flex items-center gap-1">
-                    <span className="inline-block w-3 h-3 rounded-sm bg-blue-50 border border-blue-200" />
+                    <span className="inline-block w-3 h-3 rounded-sm bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700" />
                     mes actual
                 </span>
-                <span className="text-gray-300">· clic en tarjeta o fila para navegar/editar</span>
+                <span className="text-gray-300 dark:text-gray-600">· clic en tarjeta o fila para navegar/editar</span>
             </div>
 
             <ExpenseBottomSheet

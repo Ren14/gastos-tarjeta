@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useDarkMode } from './hooks/useDarkMode'
 import { LoadExpense } from './pages/ExpenseForm'
 import { Dashboard } from './pages/Dashboard'
 import { Flujo } from './pages/Flujo'
@@ -10,12 +11,12 @@ import { setOnUnauthorized } from './api/client'
 
 const NAV_ITEMS = [
     { id: 'load',       icon: '+',   label: 'Cargar gasto' },
-    { id: 'dashboard',  icon: '📊',  label: 'Resumen' },
     { id: 'flujo',      icon: '💰',  label: 'Flujo' },
-    { id: 'cards',      icon: '💳',  label: 'Tarjetas' },
+    { id: 'dashboard',  icon: '📊',  label: 'Resumen tarjetas' },
     { id: 'recurring',  icon: '🔁',  label: 'Recurrentes' },
-    { id: 'categories', icon: '🗂️', label: 'Categorías' },
     { id: 'cotizacion', icon: '💵',  label: 'Cotización USD' },
+    { id: 'cards',      icon: '💳',  label: 'Tarjetas' },
+    { id: 'categories', icon: '🗂️', label: 'Categorías' },
     { id: 'backup',     icon: '💾',  label: 'Backup' },
 ]
 
@@ -34,7 +35,8 @@ export default function App() {
 
 function AppContent() {
     const { token, logout } = useAuth()
-    const [activeTab,        setActiveTab]        = useState('dashboard')
+    const [dark, setDark] = useDarkMode()
+    const [activeTab,        setActiveTab]        = useState('load')
     const [drawerOpen,       setDrawerOpen]       = useState(false)
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
     const [savedCount,       setSavedCount]       = useState(0)
@@ -56,7 +58,7 @@ function AppContent() {
     const desktopW = sidebarCollapsed ? RAIL_W : SIDEBAR_W
 
     return (
-        <div className="min-h-screen bg-stone-100 flex">
+        <div className="min-h-screen bg-stone-100 dark:bg-gray-900 flex">
 
             {/* Mobile overlay */}
             <div
@@ -72,7 +74,7 @@ function AppContent() {
                     // Position: overlay on mobile, sticky on desktop
                     'fixed md:sticky md:top-0',
                     'top-0 left-0 h-full md:h-screen',
-                    'bg-white border-r border-gray-200',
+                    'bg-white border-r border-gray-200 dark:bg-gray-950 dark:border-gray-800',
                     'z-50 md:z-auto shadow-2xl md:shadow-none',
                     'flex flex-col flex-shrink-0 overflow-hidden',
                     // Mobile: slide in/out via transform
@@ -89,10 +91,10 @@ function AppContent() {
                 <div className="flex-1 overflow-y-auto overflow-x-hidden pt-8 pb-2">
                     {/* "Gastos" heading — hidden when collapsed */}
                     <p
-                        className="px-4 text-xs font-bold text-gray-400 uppercase tracking-widest mb-5 whitespace-nowrap overflow-hidden transition-opacity duration-200"
+                        className="px-4 text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-5 whitespace-nowrap overflow-hidden transition-opacity duration-200"
                         style={{ opacity: sidebarCollapsed ? 0 : 1, height: sidebarCollapsed ? 0 : undefined, marginBottom: sidebarCollapsed ? 0 : undefined }}
                     >
-                        Gastos
+                        Renzonaitor Gastos App
                     </p>
 
                     <nav className="flex flex-col gap-0.5 px-2">
@@ -106,7 +108,7 @@ function AppContent() {
                                     sidebarCollapsed ? 'justify-center px-2 py-2.5 gap-0' : 'px-3 py-2.5 gap-3',
                                     activeTab === item.id
                                         ? 'bg-gray-900 text-white'
-                                        : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900',
+                                        : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-gray-100',
                                 ].join(' ')}
                             >
                                 <span className="text-base leading-none flex-shrink-0 select-none">{item.icon}</span>
@@ -126,13 +128,13 @@ function AppContent() {
                 </div>
 
                 {/* Footer: logout + desktop toggle */}
-                <div className="border-t border-gray-100 px-2 pt-3 pb-4 flex flex-col gap-0.5">
+                <div className="border-t border-gray-100 dark:border-gray-800 px-2 pt-3 pb-4 flex flex-col gap-0.5">
                     {/* Logout */}
                     <button
                         onClick={logout}
                         title={sidebarCollapsed ? 'Cerrar sesión' : undefined}
                         className={[
-                            'flex items-center rounded-xl text-sm font-semibold text-gray-400 hover:bg-gray-100 hover:text-gray-700 transition-colors whitespace-nowrap',
+                            'flex items-center rounded-xl text-sm font-semibold text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:text-gray-500 dark:hover:bg-gray-800 dark:hover:text-gray-300 transition-colors whitespace-nowrap',
                             sidebarCollapsed ? 'justify-center px-2 py-2.5 gap-0' : 'px-3 py-2.5 gap-3',
                         ].join(' ')}
                     >
@@ -145,12 +147,30 @@ function AppContent() {
                         </span>
                     </button>
 
+                    {/* Dark mode toggle */}
+                    <button
+                        onClick={() => setDark(d => !d)}
+                        title={dark ? 'Modo claro' : 'Modo oscuro'}
+                        className={[
+                            'flex items-center rounded-xl text-sm font-semibold text-gray-400 hover:bg-gray-100 hover:text-gray-700 dark:text-gray-500 dark:hover:bg-gray-800 dark:hover:text-gray-300 transition-colors whitespace-nowrap',
+                            sidebarCollapsed ? 'justify-center px-2 py-2.5 gap-0' : 'px-3 py-2.5 gap-3',
+                        ].join(' ')}
+                    >
+                        <span className="text-base leading-none flex-shrink-0 select-none">{dark ? '☀️' : '🌙'}</span>
+                        <span
+                            className="overflow-hidden transition-[max-width,opacity] duration-300 ease-in-out"
+                            style={{ maxWidth: sidebarCollapsed ? 0 : 180, opacity: sidebarCollapsed ? 0 : 1 }}
+                        >
+                            {dark ? 'Modo claro' : 'Modo oscuro'}
+                        </span>
+                    </button>
+
                     {/* Desktop-only collapse toggle */}
                     <button
                         onClick={() => setSidebarCollapsed(c => !c)}
                         title={sidebarCollapsed ? 'Expandir menú' : 'Colapsar menú'}
                         className={[
-                            'hidden md:flex items-center rounded-xl text-xs font-bold text-gray-300 hover:bg-gray-100 hover:text-gray-500 transition-colors whitespace-nowrap',
+                            'hidden md:flex items-center rounded-xl text-xs font-bold text-gray-300 hover:bg-gray-100 hover:text-gray-500 dark:text-gray-600 dark:hover:bg-gray-800 dark:hover:text-gray-400 transition-colors whitespace-nowrap',
                             sidebarCollapsed ? 'justify-center px-2 py-2 gap-0' : 'px-3 py-2 gap-2',
                         ].join(' ')}
                         aria-label={sidebarCollapsed ? 'Expandir sidebar' : 'Colapsar sidebar'}
@@ -169,7 +189,7 @@ function AppContent() {
             </aside>
 
             {/* Main area — flex-1 so it fills space next to the sticky sidebar */}
-            <div className="flex-1 min-w-0 overflow-x-hidden">
+            <div className="flex-1 min-w-0 overflow-x-hidden dark:text-gray-100">
                 <div className={`px-4 md:px-8 xl:px-10 2xl:px-14 pt-5 md:pt-8 pb-24 ${
                     NARROW_PAGES.has(activeTab) ? 'max-w-md mx-auto md:max-w-none md:mx-0' : ''
                 }`}>
@@ -187,7 +207,7 @@ function AppContent() {
                     </div>
 
                     {/* Page title — desktop only */}
-                    <h1 className="hidden md:block text-xl font-bold text-gray-900 mb-6">
+                    <h1 className="hidden md:block text-xl font-bold text-gray-900 dark:text-gray-100 mb-6">
                         {activeLabel}
                     </h1>
 

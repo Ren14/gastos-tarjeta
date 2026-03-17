@@ -11,7 +11,7 @@ function InstallmentBadge({ current, total }) {
 
 export function ExpenseList({ expenses, onSelect, onDeleted }) {
     if (!expenses?.length) {
-        return <p className="text-center text-gray-400 text-sm py-8">No expenses this month</p>
+        return <p className="text-center text-gray-400 dark:text-gray-500 text-sm py-8">No expenses this month</p>
     }
 
     return (
@@ -24,10 +24,10 @@ export function ExpenseList({ expenses, onSelect, onDeleted }) {
                          className={`flex justify-between items-center bg-white rounded-xl px-4 py-3 transition-colors ${
                              isEstimated
                                  ? 'border-2 border-dashed border-orange-200 opacity-70'
-                                 : 'border border-gray-200 cursor-pointer hover:border-gray-400'
+                                 : 'border border-gray-200 dark:bg-gray-800 dark:border-gray-700 dark:hover:border-gray-500 cursor-pointer hover:border-gray-400'
                          }`}>
                         <div>
-                            <p className={`text-sm font-semibold ${isEstimated ? 'text-gray-500' : 'text-gray-900'}`}>
+                            <p className={`text-sm font-semibold ${isEstimated ? 'text-gray-500' : 'text-gray-900 dark:text-gray-100'}`}>
                                 {e.merchant}
                             </p>
                             <div className="flex items-center gap-2 mt-1">
@@ -44,7 +44,7 @@ export function ExpenseList({ expenses, onSelect, onDeleted }) {
                             <span className={`text-sm font-bold ${isEstimated ? 'text-orange-400' : 'text-red-600'}`}>
                                 -{isEstimated ? '~' : ''}${e.installment_amount.toLocaleString('es-AR', { minimumFractionDigits: 0 })}
                             </span>
-                            {!isEstimated && <span className="text-gray-300 text-lg">›</span>}
+                            {!isEstimated && <span className="text-gray-300 dark:text-gray-600 text-lg">›</span>}
                         </div>
                     </div>
                 )

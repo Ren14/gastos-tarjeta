@@ -101,63 +101,63 @@ export function ExpenseBottomSheet({ expense, cards, categories, onClose, onSave
             />
 
             {/* Sheet */}
-            <div className="fixed bottom-0 left-0 right-0 z-50 bg-white rounded-t-2xl shadow-xl max-w-md mx-auto">
+            <div className="fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-gray-800 rounded-t-2xl shadow-xl max-w-md mx-auto">
                 {/* Handle */}
                 <div className="flex justify-center pt-3 pb-1">
-                    <div className="w-10 h-1 bg-gray-300 rounded-full" />
+                    <div className="w-10 h-1 bg-gray-300 dark:bg-gray-600 rounded-full" />
                 </div>
 
                 <div className="px-4 pb-8 pt-2 flex flex-col gap-3 max-h-[85vh] overflow-y-auto">
                     <div className="flex justify-between items-center mb-1">
-                        <h3 className="text-sm font-bold uppercase tracking-wide">Edit expense</h3>
-                        <button onClick={onClose} className="text-gray-400 text-xl leading-none">×</button>
+                        <h3 className="text-sm font-bold uppercase tracking-wide dark:text-gray-100">Edit expense</h3>
+                        <button onClick={onClose} className="text-gray-400 dark:text-gray-500 text-xl leading-none">×</button>
                     </div>
 
                     {/* Card */}
                     <div>
-                        <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Card</label>
+                        <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Card</label>
                         <select value={form.card_id} onChange={e => set('card_id', e.target.value)}
-                                className="w-full mt-1 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-gray-900 outline-none">
+                                className="w-full mt-1 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-gray-900 outline-none dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600 dark:focus:border-gray-400">
                             {cards.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                         </select>
                     </div>
 
                     {/* Merchant */}
                     <div>
-                        <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Merchant</label>
+                        <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Merchant</label>
                         <input value={form.merchant} onChange={e => set('merchant', e.target.value)}
-                               className="w-full mt-1 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-gray-900 outline-none" />
+                               className="w-full mt-1 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-gray-900 outline-none dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600 dark:focus:border-gray-400" />
                     </div>
 
                     {/* Amount */}
                     <div>
-                        <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Total amount</label>
+                        <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Total amount</label>
                         <input type="number" value={form.total_amount} onChange={e => set('total_amount', e.target.value)}
-                               className="w-full mt-1 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-gray-900 outline-none" />
+                               className="w-full mt-1 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-gray-900 outline-none dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600 dark:focus:border-gray-400" />
                     </div>
 
                     {/* Installments + Date */}
                     <div className="grid grid-cols-2 gap-3">
                         <div>
-                            <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Installments</label>
+                            <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Installments</label>
                             <select value={form.installments} onChange={e => set('installments', Number(e.target.value))}
-                                    className="w-full mt-1 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-gray-900 outline-none">
+                                    className="w-full mt-1 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-gray-900 outline-none dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600 dark:focus:border-gray-400">
                                 <option value={1}>1 — Cash</option>
                                 {[2,3,6,9,12,18,24,36,48].map(n => <option key={n} value={n}>{n}</option>)}
                             </select>
                         </div>
                         <div>
-                            <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Date</label>
+                            <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Date</label>
                             <input type="date" value={form.purchase_date} onChange={e => set('purchase_date', e.target.value)}
-                                   className="w-full mt-1 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-gray-900 outline-none" />
+                                   className="w-full mt-1 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-gray-900 outline-none dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600 dark:focus:border-gray-400" />
                         </div>
                     </div>
 
                     {/* Category */}
                     <div>
-                        <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Category</label>
+                        <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Category</label>
                         <select value={form.category_id} onChange={e => set('category_id', e.target.value)}
-                                className="w-full mt-1 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-gray-900 outline-none">
+                                className="w-full mt-1 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-gray-900 outline-none dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600 dark:focus:border-gray-400">
                             <option value="">🗂️ Other</option>
                             {categories.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
                         </select>
@@ -165,7 +165,7 @@ export function ExpenseBottomSheet({ expense, cards, categories, onClose, onSave
 
                     {/* Impact preview */}
                     {form.installments > 1 && installmentAmount && (
-                        <div className="bg-blue-50 border border-blue-200 rounded-xl px-3 py-2 text-xs text-blue-700">
+                        <div className="bg-blue-50 border border-blue-200 rounded-xl px-3 py-2 text-xs text-blue-700 dark:bg-blue-900/30 dark:border-blue-700 dark:text-blue-300">
                             <strong>{form.installments} installments of ${installmentAmount}</strong>
                             {' · impacts: '}{impactMonths.join(', ')}
                         </div>
@@ -183,7 +183,7 @@ export function ExpenseBottomSheet({ expense, cards, categories, onClose, onSave
                             className={`w-full font-bold py-3 rounded-xl text-sm tracking-wide transition-colors ${
                                 confirmDelete
                                     ? 'bg-red-600 text-white'
-                                    : 'bg-white border-2 border-red-200 text-red-500 hover:border-red-400'
+                                    : 'bg-white border-2 border-red-200 text-red-500 hover:border-red-400 dark:border-red-800 dark:text-red-400'
                             }`}>
                         {confirmDelete ? '⚠️ Confirm delete' : 'Delete expense'}
                     </button>

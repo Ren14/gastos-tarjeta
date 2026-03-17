@@ -65,7 +65,7 @@ export function ExpenseForm({ cards, categories, onSaved }) {
     return (
         <div className="flex flex-col gap-3">
             <div>
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Tarjeta</label>
+                <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Tarjeta</label>
                 <select value={form.card_id} onChange={e => set('card_id', e.target.value)}
                         className="w-full mt-1 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm font-medium focus:border-gray-900 outline-none">
                     {cards.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -73,46 +73,46 @@ export function ExpenseForm({ cards, categories, onSaved }) {
             </div>
 
             <div>
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Comercio</label>
+                <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Comercio</label>
                 <input value={form.merchant} onChange={e => set('merchant', e.target.value)}
                        placeholder="Ej: Shell"
-                       className="w-full mt-1 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-gray-900 outline-none" />
+                       className="w-full mt-1 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-gray-900 outline-none dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600 dark:focus:border-gray-400" />
             </div>
 
             <div>
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Monto total</label>
+                <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Monto total</label>
                 <input type="number" value={form.total_amount} onChange={e => set('total_amount', e.target.value)}
                        placeholder="$ 0,00"
-                       className="w-full mt-1 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-gray-900 outline-none" />
+                       className="w-full mt-1 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-gray-900 outline-none dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600 dark:focus:border-gray-400" />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
                 <div>
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Cuotas</label>
+                    <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Cuotas</label>
                     <select value={form.installments} onChange={e => set('installments', Number(e.target.value))}
-                            className="w-full mt-1 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-gray-900 outline-none">
+                            className="w-full mt-1 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-gray-900 outline-none dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600 dark:focus:border-gray-400">
                         <option value={1}>1 — Contado</option>
                         {[2,3,6,9,12,18,24,36,48].map(n => <option key={n} value={n}>{n} cuotas</option>)}
                     </select>
                 </div>
                 <div>
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Fecha</label>
+                    <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Fecha</label>
                     <input type="date" value={form.purchase_date} onChange={e => set('purchase_date', e.target.value)}
-                           className="w-full mt-1 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-gray-900 outline-none" />
+                           className="w-full mt-1 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-gray-900 outline-none dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600 dark:focus:border-gray-400" />
                 </div>
             </div>
 
             <div>
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Categoría</label>
+                <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Categoría</label>
                 <select value={form.category_id} onChange={e => set('category_id', e.target.value)}
-                        className="w-full mt-1 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-gray-900 outline-none">
+                        className="w-full mt-1 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-gray-900 outline-none dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600 dark:focus:border-gray-400">
                     <option value="">🗂️ Varios</option>
                     {categories.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
                 </select>
             </div>
 
             {form.installments > 1 && installmentAmount && (
-                <div className="bg-blue-50 border border-blue-200 rounded-xl px-3 py-2 text-xs text-blue-700">
+                <div className="bg-blue-50 border border-blue-200 rounded-xl px-3 py-2 text-xs text-blue-700 dark:bg-blue-900/30 dark:border-blue-700 dark:text-blue-300">
                     <strong>{form.installments} cuotas de ${installmentAmount}</strong>
                     {' · impacta: '}{impactMonths.join(', ')}
                 </div>

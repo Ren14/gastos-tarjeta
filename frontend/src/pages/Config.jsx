@@ -12,33 +12,33 @@ function CardForm({ form, setForm }) {
     return (
         <>
             <div>
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Nombre</label>
+                <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Nombre</label>
                 <input value={form.name} onChange={e => set('name', e.target.value)}
                        placeholder="Visa Gold"
-                       className="w-full mt-1 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-gray-900 outline-none" />
+                       className="w-full mt-1 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-gray-900 outline-none dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600 dark:focus:border-gray-400" />
             </div>
             <div>
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Banco</label>
+                <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Banco</label>
                 <input value={form.bank} onChange={e => set('bank', e.target.value)}
                        placeholder="Galicia"
-                       className="w-full mt-1 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-gray-900 outline-none" />
+                       className="w-full mt-1 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-gray-900 outline-none dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600 dark:focus:border-gray-400" />
             </div>
             <div className="grid grid-cols-2 gap-3">
                 <div>
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Tipo</label>
+                    <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Tipo</label>
                     <select value={form.card_type} onChange={e => set('card_type', e.target.value)}
-                            className="w-full mt-1 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-gray-900 outline-none">
+                            className="w-full mt-1 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-gray-900 outline-none dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600 dark:focus:border-gray-400">
                         {CARD_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
                     </select>
                 </div>
                 <div>
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Color</label>
+                    <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Color</label>
                     <div className="flex items-center gap-2 mt-1">
                         <span className="w-9 h-9 rounded-lg border-2 border-gray-200 flex-shrink-0"
                               style={{ backgroundColor: form.color_hex }} />
                         <input value={form.color_hex} onChange={e => set('color_hex', e.target.value)}
                                placeholder="#6366f1"
-                               className="w-full px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-gray-900 outline-none" />
+                               className="w-full px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-gray-900 outline-none dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600 dark:focus:border-gray-400" />
                     </div>
                 </div>
             </div>
@@ -121,11 +121,11 @@ function CardsSection() {
 
     return (
         <div>
-            <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Tarjetas</h2>
+            <h2 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-4">Tarjetas</h2>
 
-            <div className="bg-white border border-gray-200 rounded-xl overflow-hidden mb-3">
+            <div className="bg-white dark:bg-gray-800 dark:border-gray-700 border border-gray-200 rounded-xl overflow-hidden mb-3">
                 {cards.length === 0 && (
-                    <p className="text-xs text-gray-400 text-center py-4">No hay tarjetas activas</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 text-center py-4">No hay tarjetas activas</p>
                 )}
                 {cards.map((card, i) => (
                     <div key={card.id} className={i < cards.length - 1 || editingId === card.id ? 'border-b border-gray-100' : ''}>
@@ -134,13 +134,13 @@ function CardsSection() {
                                 <span className="w-3 h-3 rounded-full flex-shrink-0"
                                       style={{ backgroundColor: card.color_hex }} />
                                 <div>
-                                    <p className="text-sm font-semibold text-gray-900">{card.name}</p>
-                                    <p className="text-xs text-gray-400">{card.bank} · {card.card_type}</p>
+                                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{card.name}</p>
+                                    <p className="text-xs text-gray-400 dark:text-gray-500">{card.bank} · {card.card_type}</p>
                                 </div>
                             </div>
                             <button
                                 onClick={() => editingId === card.id ? setEditingId(null) : startEdit(card)}
-                                className="text-xs font-bold text-gray-500 hover:text-gray-900 px-2 py-1"
+                                className="text-xs font-bold text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 px-2 py-1"
                             >
                                 {editingId === card.id ? 'Cancelar' : 'Editar'}
                             </button>
@@ -156,7 +156,7 @@ function CardsSection() {
                                         className={`py-2 rounded-xl text-xs font-bold border-2 transition-colors disabled:opacity-50 ${
                                             confirmDeactivate === card.id
                                                 ? 'bg-red-600 text-white border-red-600'
-                                                : 'text-red-500 border-red-200 hover:border-red-400 bg-white'
+                                                : 'text-red-500 border-red-200 hover:border-red-400 bg-white dark:bg-gray-800 dark:border-red-800 dark:text-red-400'
                                         }`}
                                     >
                                         {confirmDeactivate === card.id ? 'Confirmar' : 'Desactivar'}
@@ -176,13 +176,13 @@ function CardsSection() {
             </div>
 
             {adding ? (
-                <div className="bg-white border border-gray-200 rounded-xl px-4 py-4 mb-3 flex flex-col gap-3">
-                    <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">Nueva tarjeta</p>
+                <div className="bg-white dark:bg-gray-800 dark:border-gray-700 border border-gray-200 rounded-xl px-4 py-4 mb-3 flex flex-col gap-3">
+                    <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Nueva tarjeta</p>
                     <CardForm form={newCard} setForm={setNewCard} />
                     <div className="grid grid-cols-2 gap-3">
                         <button
                             onClick={() => setAdding(false)}
-                            className="py-2 border-2 border-gray-200 rounded-xl text-xs font-bold text-gray-500 hover:border-gray-400"
+                            className="py-2 border-2 border-gray-200 dark:border-gray-600 dark:text-gray-400 rounded-xl text-xs font-bold text-gray-500 hover:border-gray-400"
                         >
                             Cancelar
                         </button>
@@ -198,7 +198,7 @@ function CardsSection() {
             ) : (
                 <button
                     onClick={() => { setAdding(true); setEditingId(null) }}
-                    className="w-full py-2 border-2 border-dashed border-gray-200 rounded-xl text-sm font-bold text-gray-400 hover:border-gray-400 hover:text-gray-600 transition-colors mb-3"
+                    className="w-full py-2 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-xl text-sm font-bold text-gray-400 dark:text-gray-500 hover:border-gray-400 hover:text-gray-600 transition-colors mb-3"
                 >
                     + Agregar tarjeta
                 </button>
@@ -207,8 +207,8 @@ function CardsSection() {
             {msg && (
                 <p className={`text-xs px-3 py-2 rounded-lg border ${
                     msg.type === 'success'
-                        ? 'bg-green-50 border-green-200 text-green-700'
-                        : 'bg-red-50 border-red-200 text-red-500'
+                        ? 'bg-green-50 dark:bg-green-900/30 dark:border-green-700 dark:text-green-300 border-green-200 text-green-700'
+                        : 'bg-red-50 dark:bg-red-900/30 dark:border-red-700 dark:text-red-300 border-red-200 text-red-500'
                 }`}>
                     {msg.text}
                 </p>
@@ -224,24 +224,24 @@ function RecurringForm({ form, setForm, cards, categories }) {
     return (
         <>
             <div>
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Comercio</label>
+                <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Comercio</label>
                 <input value={form.merchant} onChange={e => set('merchant', e.target.value)}
                        placeholder="Netflix"
-                       className="w-full mt-1 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-gray-900 outline-none" />
+                       className="w-full mt-1 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-gray-900 outline-none dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600 dark:focus:border-gray-400" />
             </div>
             <div className="grid grid-cols-2 gap-3">
                 <div>
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Tarjeta</label>
+                    <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Tarjeta</label>
                     <select value={form.card_id} onChange={e => set('card_id', e.target.value)}
-                            className="w-full mt-1 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-gray-900 outline-none">
+                            className="w-full mt-1 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-gray-900 outline-none dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600 dark:focus:border-gray-400">
                         <option value="">— Seleccionar —</option>
                         {cards.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
                     </select>
                 </div>
                 <div>
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Moneda</label>
+                    <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Moneda</label>
                     <select value={form.currency} onChange={e => set('currency', e.target.value)}
-                            className="w-full mt-1 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-gray-900 outline-none">
+                            className="w-full mt-1 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-gray-900 outline-none dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600 dark:focus:border-gray-400">
                         <option value="USD">USD</option>
                         <option value="ARS">ARS</option>
                     </select>
@@ -249,23 +249,23 @@ function RecurringForm({ form, setForm, cards, categories }) {
             </div>
             {form.currency === 'ARS' ? (
                 <div>
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Monto ARS</label>
+                    <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Monto ARS</label>
                     <input type="number" value={form.amount_ars} onChange={e => set('amount_ars', e.target.value)}
                            placeholder="14200"
-                           className="w-full mt-1 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-gray-900 outline-none" />
+                           className="w-full mt-1 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-gray-900 outline-none dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600 dark:focus:border-gray-400" />
                 </div>
             ) : (
                 <div>
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Monto USD</label>
+                    <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Monto USD</label>
                     <input type="number" value={form.amount_usd} onChange={e => set('amount_usd', e.target.value)}
                            placeholder="9.99"
-                           className="w-full mt-1 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-gray-900 outline-none" />
+                           className="w-full mt-1 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-gray-900 outline-none dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600 dark:focus:border-gray-400" />
                 </div>
             )}
             <div>
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Categoría (opcional)</label>
+                <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Categoría (opcional)</label>
                 <select value={form.category_id} onChange={e => set('category_id', e.target.value)}
-                        className="w-full mt-1 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-gray-900 outline-none">
+                        className="w-full mt-1 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-gray-900 outline-none dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600 dark:focus:border-gray-400">
                     <option value="">Sin categoría</option>
                     {categories.map(c => <option key={c.id} value={c.id}>{c.icon} {c.name}</option>)}
                 </select>
@@ -377,11 +377,11 @@ function RecurringSection({ recurring, cards, categories, onRefresh }) {
 
     return (
         <div>
-            <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Recurrentes</h2>
+            <h2 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-4">Recurrentes</h2>
 
-            <div className="bg-white border border-gray-200 rounded-xl overflow-hidden mb-3">
+            <div className="bg-white dark:bg-gray-800 dark:border-gray-700 border border-gray-200 rounded-xl overflow-hidden mb-3">
                 {recurring.length === 0 && (
-                    <p className="text-xs text-gray-400 text-center py-4">No hay gastos recurrentes activos</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 text-center py-4">No hay gastos recurrentes activos</p>
                 )}
                 {recurring.map((item, i) => {
                     const card = cards.find(c => c.id === item.card_id)
@@ -392,8 +392,8 @@ function RecurringSection({ recurring, cards, categories, onRefresh }) {
                                 <div className="flex items-center gap-3">
                                     <span className="text-base leading-none">{cat?.icon ?? '🔁'}</span>
                                     <div>
-                                        <p className="text-sm font-semibold text-gray-900">{item.merchant}</p>
-                                        <p className="text-xs text-gray-400">
+                                        <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{item.merchant}</p>
+                                        <p className="text-xs text-gray-400 dark:text-gray-500">
                                             {card?.name ?? '—'} · {item.currency === 'ARS'
                                                 ? `$${Number(item.amount_ars).toLocaleString('es-AR')} ARS`
                                                 : `USD ${item.amount_usd}`}
@@ -402,7 +402,7 @@ function RecurringSection({ recurring, cards, categories, onRefresh }) {
                                 </div>
                                 <button
                                     onClick={() => editingId === item.id ? setEditingId(null) : startEdit(item)}
-                                    className="text-xs font-bold text-gray-500 hover:text-gray-900 px-2 py-1"
+                                    className="text-xs font-bold text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 px-2 py-1"
                                 >
                                     {editingId === item.id ? 'Cancelar' : 'Editar'}
                                 </button>
@@ -418,7 +418,7 @@ function RecurringSection({ recurring, cards, categories, onRefresh }) {
                                             className={`py-2 rounded-xl text-xs font-bold border-2 transition-colors disabled:opacity-50 ${
                                                 confirmDeactivate === item.id
                                                     ? 'bg-red-600 text-white border-red-600'
-                                                    : 'text-red-500 border-red-200 hover:border-red-400 bg-white'
+                                                    : 'text-red-500 border-red-200 hover:border-red-400 bg-white dark:bg-gray-800 dark:border-red-800 dark:text-red-400'
                                             }`}
                                         >
                                             {confirmDeactivate === item.id ? 'Confirmar' : 'Desactivar'}
@@ -439,13 +439,13 @@ function RecurringSection({ recurring, cards, categories, onRefresh }) {
             </div>
 
             {adding ? (
-                <div className="bg-white border border-gray-200 rounded-xl px-4 py-4 mb-3 flex flex-col gap-3">
-                    <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">Nuevo recurrente</p>
+                <div className="bg-white dark:bg-gray-800 dark:border-gray-700 border border-gray-200 rounded-xl px-4 py-4 mb-3 flex flex-col gap-3">
+                    <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Nuevo recurrente</p>
                     <RecurringForm form={newItem} setForm={setNewItem} cards={cards} categories={categories} />
                     <div className="grid grid-cols-2 gap-3">
                         <button
                             onClick={() => { setAdding(false); setNewItem(EMPTY_RECURRING) }}
-                            className="py-2 border-2 border-gray-200 rounded-xl text-xs font-bold text-gray-500 hover:border-gray-400"
+                            className="py-2 border-2 border-gray-200 dark:border-gray-600 dark:text-gray-400 rounded-xl text-xs font-bold text-gray-500 hover:border-gray-400"
                         >
                             Cancelar
                         </button>
@@ -461,7 +461,7 @@ function RecurringSection({ recurring, cards, categories, onRefresh }) {
             ) : (
                 <button
                     onClick={() => { setAdding(true); setEditingId(null) }}
-                    className="w-full py-2 border-2 border-dashed border-gray-200 rounded-xl text-sm font-bold text-gray-400 hover:border-gray-400 hover:text-gray-600 transition-colors mb-3"
+                    className="w-full py-2 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-xl text-sm font-bold text-gray-400 dark:text-gray-500 hover:border-gray-400 hover:text-gray-600 transition-colors mb-3"
                 >
                     + Agregar recurrente
                 </button>
@@ -470,8 +470,8 @@ function RecurringSection({ recurring, cards, categories, onRefresh }) {
             {msg && (
                 <p className={`text-xs px-3 py-2 rounded-lg border ${
                     msg.type === 'success'
-                        ? 'bg-green-50 border-green-200 text-green-700'
-                        : 'bg-red-50 border-red-200 text-red-500'
+                        ? 'bg-green-50 dark:bg-green-900/30 dark:border-green-700 dark:text-green-300 border-green-200 text-green-700'
+                        : 'bg-red-50 dark:bg-red-900/30 dark:border-red-700 dark:text-red-300 border-red-200 text-red-500'
                 }`}>
                     {msg.text}
                 </p>
@@ -488,20 +488,20 @@ function CategoryForm({ form, setForm }) {
         <>
             <div className="grid grid-cols-2 gap-3">
                 <div>
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Nombre</label>
+                    <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Nombre</label>
                     <input value={form.name} onChange={e => set('name', e.target.value)}
                            placeholder="Restaurantes"
-                           className="w-full mt-1 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-gray-900 outline-none" />
+                           className="w-full mt-1 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-gray-900 outline-none dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600 dark:focus:border-gray-400" />
                 </div>
                 <div>
-                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Ícono</label>
+                    <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Ícono</label>
                     <input value={form.icon} onChange={e => set('icon', e.target.value)}
                            placeholder="🍕"
-                           className="w-full mt-1 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-gray-900 outline-none" />
+                           className="w-full mt-1 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-gray-900 outline-none dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600 dark:focus:border-gray-400" />
                 </div>
             </div>
             <div>
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Color</label>
+                <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Color</label>
                 <div className="flex items-center gap-2 mt-1">
                     <span className="w-9 h-9 rounded-lg border-2 border-gray-200 flex-shrink-0"
                           style={{ backgroundColor: form.color_hex }} />
@@ -589,11 +589,11 @@ export function CategoriesPage() {
 
     return (
         <div>
-            <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Categorías</h2>
+            <h2 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-4">Categorías</h2>
 
-            <div className="bg-white border border-gray-200 rounded-xl overflow-hidden mb-3">
+            <div className="bg-white dark:bg-gray-800 dark:border-gray-700 border border-gray-200 rounded-xl overflow-hidden mb-3">
                 {categories.length === 0 && (
-                    <p className="text-xs text-gray-400 text-center py-4">No hay categorías</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 text-center py-4">No hay categorías</p>
                 )}
                 {categories.map((cat, i) => (
                     <div key={cat.id} className={i < categories.length - 1 || editingId === cat.id ? 'border-b border-gray-100' : ''}>
@@ -602,11 +602,11 @@ export function CategoriesPage() {
                                 <span className="text-lg leading-none">{cat.icon}</span>
                                 <span className="w-3 h-3 rounded-full flex-shrink-0"
                                       style={{ backgroundColor: cat.color_hex }} />
-                                <span className="text-sm font-semibold text-gray-900">{cat.name}</span>
+                                <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">{cat.name}</span>
                             </div>
                             <button
                                 onClick={() => editingId === cat.id ? setEditingId(null) : startEdit(cat)}
-                                className="text-xs font-bold text-gray-500 hover:text-gray-900 px-2 py-1"
+                                className="text-xs font-bold text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 px-2 py-1"
                             >
                                 {editingId === cat.id ? 'Cancelar' : 'Editar'}
                             </button>
@@ -622,7 +622,7 @@ export function CategoriesPage() {
                                         className={`py-2 rounded-xl text-xs font-bold border-2 transition-colors disabled:opacity-50 ${
                                             confirmDelete === cat.id
                                                 ? 'bg-red-600 text-white border-red-600'
-                                                : 'text-red-500 border-red-200 hover:border-red-400 bg-white'
+                                                : 'text-red-500 border-red-200 hover:border-red-400 bg-white dark:bg-gray-800 dark:border-red-800 dark:text-red-400'
                                         }`}
                                     >
                                         {confirmDelete === cat.id ? 'Confirmar' : 'Eliminar'}
@@ -642,13 +642,13 @@ export function CategoriesPage() {
             </div>
 
             {adding ? (
-                <div className="bg-white border border-gray-200 rounded-xl px-4 py-4 mb-3 flex flex-col gap-3">
-                    <p className="text-xs font-bold text-gray-500 uppercase tracking-wide">Nueva categoría</p>
+                <div className="bg-white dark:bg-gray-800 dark:border-gray-700 border border-gray-200 rounded-xl px-4 py-4 mb-3 flex flex-col gap-3">
+                    <p className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Nueva categoría</p>
                     <CategoryForm form={newCat} setForm={setNewCat} />
                     <div className="grid grid-cols-2 gap-3">
                         <button
                             onClick={() => { setAdding(false); setNewCat(EMPTY_CATEGORY) }}
-                            className="py-2 border-2 border-gray-200 rounded-xl text-xs font-bold text-gray-500 hover:border-gray-400"
+                            className="py-2 border-2 border-gray-200 dark:border-gray-600 dark:text-gray-400 rounded-xl text-xs font-bold text-gray-500 hover:border-gray-400"
                         >
                             Cancelar
                         </button>
@@ -664,7 +664,7 @@ export function CategoriesPage() {
             ) : (
                 <button
                     onClick={() => { setAdding(true); setEditingId(null) }}
-                    className="w-full py-2 border-2 border-dashed border-gray-200 rounded-xl text-sm font-bold text-gray-400 hover:border-gray-400 hover:text-gray-600 transition-colors mb-3"
+                    className="w-full py-2 border-2 border-dashed border-gray-200 dark:border-gray-700 rounded-xl text-sm font-bold text-gray-400 dark:text-gray-500 hover:border-gray-400 hover:text-gray-600 transition-colors mb-3"
                 >
                     + Agregar categoría
                 </button>
@@ -673,8 +673,8 @@ export function CategoriesPage() {
             {msg && (
                 <p className={`text-xs px-3 py-2 rounded-lg border ${
                     msg.type === 'success'
-                        ? 'bg-green-50 border-green-200 text-green-700'
-                        : 'bg-red-50 border-red-200 text-red-500'
+                        ? 'bg-green-50 dark:bg-green-900/30 dark:border-green-700 dark:text-green-300 border-green-200 text-green-700'
+                        : 'bg-red-50 dark:bg-red-900/30 dark:border-red-700 dark:text-red-300 border-red-200 text-red-500'
                 }`}>
                     {msg.text}
                 </p>
@@ -795,55 +795,55 @@ export function CotizacionPage() {
     return (
         <div className="flex flex-col gap-6">
             <div>
-                <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">
+                <h2 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-4">
                     Cotización USD oficial
                 </h2>
                 <div className="flex flex-col gap-3">
                     <div className="grid grid-cols-2 gap-3">
                         <div>
-                            <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Mes</label>
+                            <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Mes</label>
                             <select value={month} onChange={e => setMonth(Number(e.target.value))}
-                                    className="w-full mt-1 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-gray-900 outline-none">
+                                    className="w-full mt-1 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-gray-900 outline-none dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600 dark:focus:border-gray-400">
                                 {MONTHS.map((m, i) => <option key={i+1} value={i+1}>{m}</option>)}
                             </select>
                         </div>
                         <div>
-                            <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Año</label>
+                            <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Año</label>
                             <input type="number" value={year} onChange={e => setYear(Number(e.target.value))}
-                                   className="w-full mt-1 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-gray-900 outline-none" />
+                                   className="w-full mt-1 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-gray-900 outline-none dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600 dark:focus:border-gray-400" />
                         </div>
                     </div>
 
                     {currentRate && (
-                        <div className="bg-green-50 border border-green-200 rounded-xl px-3 py-2 flex justify-between items-center">
-                            <span className="text-xs text-green-700 font-semibold">
+                        <div className="bg-green-50 dark:bg-green-900/30 dark:border-green-700 border border-green-200 rounded-xl px-3 py-2 flex justify-between items-center">
+                            <span className="text-xs text-green-700 dark:text-green-300 font-semibold">
                                 Cotización guardada para {MONTHS[month-1]} {year}
                             </span>
-                            <span className="text-sm font-bold text-green-700">
+                            <span className="text-sm font-bold text-green-700 dark:text-green-300">
                                 ${parseFloat(currentRate.usd_to_ars).toLocaleString('es-AR')}
                             </span>
                         </div>
                     )}
 
                     <div>
-                        <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">
+                        <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
                             {currentRate ? 'Actualizar cotización' : '1 USD = ARS'}
                         </label>
                         <input type="number" value={usdToArs} onChange={e => setUsdToArs(e.target.value)}
                                placeholder="Ej: 1150"
-                               className="w-full mt-1 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-gray-900 outline-none" />
+                               className="w-full mt-1 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-gray-900 outline-none dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600 dark:focus:border-gray-400" />
                     </div>
 
                     <div>
-                        <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Referencia (opcional)</label>
+                        <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Referencia (opcional)</label>
                         <input value={notes} onChange={e => setNotes(e.target.value)}
                                placeholder="Dólar blue / oficial..."
-                               className="w-full mt-1 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-gray-900 outline-none" />
+                               className="w-full mt-1 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-gray-900 outline-none dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600 dark:focus:border-gray-400" />
                     </div>
 
                     <div className="grid grid-cols-2 gap-3">
                         <button onClick={fetchFromAPI} disabled={apiLoading}
-                                className="py-2 bg-white border-2 border-gray-200 rounded-xl text-sm font-bold text-gray-600 hover:border-gray-900 transition-colors disabled:opacity-50">
+                                className="py-2 bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-gray-300 border-2 border-gray-200 rounded-xl text-sm font-bold text-gray-600 hover:border-gray-900 transition-colors disabled:opacity-50">
                             {apiLoading ? 'Obteniendo...' : '🌐 Obtener API'}
                         </button>
                         <button onClick={handleSaveRate} disabled={loading || !usdToArs}
@@ -853,7 +853,7 @@ export function CotizacionPage() {
                     </div>
 
                     {apiError && (
-                        <p className="text-xs text-red-500 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                        <p className="text-xs text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-900/30 dark:border-red-700 border border-red-200 rounded-lg px-3 py-2">
                             {apiError}
                         </p>
                     )}
@@ -861,11 +861,11 @@ export function CotizacionPage() {
             </div>
 
             <div>
-                <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">
+                <h2 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-4">
                     Generar recurrentes
                 </h2>
-                <div className="bg-white border border-gray-200 rounded-xl px-4 py-3 mb-3">
-                    <p className="text-xs text-gray-500 mb-3">
+                <div className="bg-white dark:bg-gray-800 dark:border-gray-700 border border-gray-200 rounded-xl px-4 py-3 mb-3">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
                         Genera los gastos recurrentes de <strong>{MONTHS[month-1]} {year}</strong>.
                         {currentRate && (
                             <span className="text-green-600 ml-1">
@@ -886,7 +886,7 @@ export function CotizacionPage() {
                                 : (currentRate ? r.amount_usd * currentRate.usd_to_ars : null)
                             return (
                                 <div key={r.id} className="flex justify-between text-xs py-1 border-b border-gray-100 last:border-0">
-                                    <span className="text-gray-700">{r.merchant}</span>
+                                    <span className="text-gray-700 dark:text-gray-300">{r.merchant}</span>
                                     <div className="flex gap-2 items-center">
                                         {arsAmount != null && (
                                             <span className="text-green-600 font-semibold">
@@ -911,25 +911,25 @@ export function CotizacionPage() {
             {message && (
                 <p className={`text-xs px-3 py-2 rounded-lg border ${
                     message.type === 'success'
-                        ? 'bg-green-50 border-green-200 text-green-700'
-                        : 'bg-red-50 border-red-200 text-red-500'
+                        ? 'bg-green-50 dark:bg-green-900/30 dark:border-green-700 dark:text-green-300 border-green-200 text-green-700'
+                        : 'bg-red-50 dark:bg-red-900/30 dark:border-red-700 dark:text-red-300 border-red-200 text-red-500'
                 }`}>
                     {message.text}
                 </p>
             )}
 
             <div>
-                <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">
+                <h2 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-3">
                     Historial de cotizaciones
                 </h2>
                 {rates.length === 0 ? (
-                    <p className="text-xs text-gray-400 text-center py-4">Sin cotizaciones cargadas</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 text-center py-4">Sin cotizaciones cargadas</p>
                 ) : (
-                    <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+                    <div className="bg-white dark:bg-gray-800 dark:border-gray-700 border border-gray-200 rounded-xl overflow-hidden">
                         {rates.map((r, i) => (
                             <div key={r.id}
                                  className={`flex justify-between items-center px-4 py-3 text-sm ${i < rates.length - 1 ? 'border-b border-gray-100' : ''}`}>
-                                <span className="text-gray-600">{MONTHS[r.month-1]} {r.year}</span>
+                                <span className="text-gray-600 dark:text-gray-400">{MONTHS[r.month-1]} {r.year}</span>
                                 <span className="font-bold text-green-600">
                                     ${parseFloat(r.usd_to_ars).toLocaleString('es-AR')}
                                 </span>
@@ -1056,23 +1056,23 @@ export function Config() {
 
             {/* Cotización */}
             <div>
-                <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">
+                <h2 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-4">
                     Cotización USD oficial
                 </h2>
 
                 <div className="flex flex-col gap-3">
                     <div className="grid grid-cols-2 gap-3">
                         <div>
-                            <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Mes</label>
+                            <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Mes</label>
                             <select value={month} onChange={e => setMonth(Number(e.target.value))}
-                                    className="w-full mt-1 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-gray-900 outline-none">
+                                    className="w-full mt-1 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-gray-900 outline-none dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600 dark:focus:border-gray-400">
                                 {MONTHS.map((m, i) => <option key={i+1} value={i+1}>{m}</option>)}
                             </select>
                         </div>
                         <div>
-                            <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Año</label>
+                            <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Año</label>
                             <input type="number" value={year} onChange={e => setYear(Number(e.target.value))}
-                                   className="w-full mt-1 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-gray-900 outline-none" />
+                                   className="w-full mt-1 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-gray-900 outline-none dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600 dark:focus:border-gray-400" />
                         </div>
                     </div>
 
@@ -1082,31 +1082,31 @@ export function Config() {
               <span className="text-xs text-green-700 font-semibold">
                 Cotización guardada para {MONTHS[month-1]} {year}
               </span>
-                            <span className="text-sm font-bold text-green-700">
+                            <span className="text-sm font-bold text-green-700 dark:text-green-300">
                 ${parseFloat(currentRate.usd_to_ars).toLocaleString('es-AR')}
               </span>
                         </div>
                     )}
 
                     <div>
-                        <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">
+                        <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
                             {currentRate ? 'Actualizar cotización' : '1 USD = ARS'}
                         </label>
                         <input type="number" value={usdToArs} onChange={e => setUsdToArs(e.target.value)}
                                placeholder="Ej: 1150"
-                               className="w-full mt-1 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-gray-900 outline-none" />
+                               className="w-full mt-1 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-gray-900 outline-none dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600 dark:focus:border-gray-400" />
                     </div>
 
                     <div>
-                        <label className="text-xs font-bold text-gray-500 uppercase tracking-wide">Referencia (opcional)</label>
+                        <label className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wide">Referencia (opcional)</label>
                         <input value={notes} onChange={e => setNotes(e.target.value)}
                                placeholder="Dólar blue / oficial..."
-                               className="w-full mt-1 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-gray-900 outline-none" />
+                               className="w-full mt-1 px-3 py-2 border-2 border-gray-200 rounded-xl text-sm focus:border-gray-900 outline-none dark:bg-gray-800 dark:text-gray-100 dark:border-gray-600 dark:focus:border-gray-400" />
                     </div>
 
                     <div className="grid grid-cols-2 gap-3">
                         <button onClick={fetchFromAPI} disabled={apiLoading}
-                                className="py-2 bg-white border-2 border-gray-200 rounded-xl text-sm font-bold text-gray-600 hover:border-gray-900 transition-colors disabled:opacity-50">
+                                className="py-2 bg-white dark:bg-gray-800 dark:border-gray-600 dark:text-gray-300 border-2 border-gray-200 rounded-xl text-sm font-bold text-gray-600 hover:border-gray-900 transition-colors disabled:opacity-50">
                             {apiLoading ? 'Obteniendo...' : '🌐 Obtener API'}
                         </button>
                         <button onClick={handleSaveRate} disabled={loading || !usdToArs}
@@ -1116,7 +1116,7 @@ export function Config() {
                     </div>
 
                     {apiError && (
-                        <p className="text-xs text-red-500 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                        <p className="text-xs text-red-500 dark:text-red-400 bg-red-50 dark:bg-red-900/30 dark:border-red-700 border border-red-200 rounded-lg px-3 py-2">
                             {apiError}
                         </p>
                     )}
@@ -1125,11 +1125,11 @@ export function Config() {
 
             {/* Generar recurrentes */}
             <div>
-                <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">
+                <h2 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-4">
                     Generar recurrentes
                 </h2>
-                <div className="bg-white border border-gray-200 rounded-xl px-4 py-3 mb-3">
-                    <p className="text-xs text-gray-500 mb-3">
+                <div className="bg-white dark:bg-gray-800 dark:border-gray-700 border border-gray-200 rounded-xl px-4 py-3 mb-3">
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">
                         Genera los gastos recurrentes de <strong>{MONTHS[month-1]} {year}</strong>.
                         {currentRate && (
                             <span className="text-green-600 ml-1">
@@ -1150,7 +1150,7 @@ export function Config() {
                                 : (currentRate ? r.amount_usd * currentRate.usd_to_ars : null)
                             return (
                                 <div key={r.id} className="flex justify-between text-xs py-1 border-b border-gray-100 last:border-0">
-                                    <span className="text-gray-700">{r.merchant}</span>
+                                    <span className="text-gray-700 dark:text-gray-300">{r.merchant}</span>
                                     <div className="flex gap-2 items-center">
                                         {arsAmount != null && (
                                             <span className="text-green-600 font-semibold">
@@ -1176,8 +1176,8 @@ export function Config() {
             {message && (
                 <p className={`text-xs px-3 py-2 rounded-lg border ${
                     message.type === 'success'
-                        ? 'bg-green-50 border-green-200 text-green-700'
-                        : 'bg-red-50 border-red-200 text-red-500'
+                        ? 'bg-green-50 dark:bg-green-900/30 dark:border-green-700 dark:text-green-300 border-green-200 text-green-700'
+                        : 'bg-red-50 dark:bg-red-900/30 dark:border-red-700 dark:text-red-300 border-red-200 text-red-500'
                 }`}>
                     {message.text}
                 </p>
@@ -1185,17 +1185,17 @@ export function Config() {
 
             {/* Historial */}
             <div>
-                <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-3">
+                <h2 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-3">
                     Exchange rate history
                 </h2>
                 {rates.length === 0 ? (
-                    <p className="text-xs text-gray-400 text-center py-4">Sin cotizaciones cargadas</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 text-center py-4">Sin cotizaciones cargadas</p>
                 ) : (
-                    <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+                    <div className="bg-white dark:bg-gray-800 dark:border-gray-700 border border-gray-200 rounded-xl overflow-hidden">
                         {rates.map((r, i) => (
                             <div key={r.id}
                                  className={`flex justify-between items-center px-4 py-3 text-sm ${i < rates.length - 1 ? 'border-b border-gray-100' : ''}`}>
-                                <span className="text-gray-600">{MONTHS[r.month-1]} {r.year}</span>
+                                <span className="text-gray-600 dark:text-gray-400">{MONTHS[r.month-1]} {r.year}</span>
                                 <span className="font-bold text-green-600">
                   ${parseFloat(r.usd_to_ars).toLocaleString('es-AR')}
                 </span>

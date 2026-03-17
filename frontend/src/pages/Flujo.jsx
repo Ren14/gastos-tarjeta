@@ -65,10 +65,10 @@ function CategoryModal({ categories, onClose, onSaved }) {
 
     return (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={onClose}>
-            <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6" onClick={e => e.stopPropagation()}>
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md p-6" onClick={e => e.stopPropagation()}>
                 <div className="flex items-center justify-between mb-5">
-                    <h2 className="text-base font-bold text-gray-900">Categorías de Flujo</h2>
-                    <button onClick={onClose} className="text-gray-400 hover:text-gray-700 text-xl leading-none">×</button>
+                    <h2 className="text-base font-bold text-gray-900 dark:text-gray-100">Categorías de Flujo</h2>
+                    <button onClick={onClose} className="text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 text-xl leading-none">×</button>
                 </div>
 
                 {/* Create form */}
@@ -77,10 +77,10 @@ function CategoryModal({ categories, onClose, onSaved }) {
                         value={name}
                         onChange={e => setName(e.target.value)}
                         placeholder="Nueva categoría…"
-                        className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm outline-none focus:border-gray-400"
+                        className="flex-1 px-3 py-2 border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg text-sm outline-none focus:border-gray-400"
                     />
                     <select value={type} onChange={e => setType(e.target.value)}
-                        className="px-2 py-2 border border-gray-200 rounded-lg text-sm outline-none">
+                        className="px-2 py-2 border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg text-sm outline-none">
                         <option value="income">Ingreso</option>
                         <option value="expense">Egreso</option>
                     </select>
@@ -93,24 +93,24 @@ function CategoryModal({ categories, onClose, onSaved }) {
                 {/* Lists */}
                 {[['income', 'Ingresos', income], ['expense', 'Egresos', expense]].map(([t, label, cats]) => (
                     <div key={t} className="mb-4">
-                        <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-2">{label}</p>
+                        <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2">{label}</p>
                         {cats.map(cat => (
-                            <div key={cat.id} className="flex items-center gap-2 py-1.5 border-b border-gray-100 last:border-0">
+                            <div key={cat.id} className="flex items-center gap-2 py-1.5 border-b border-gray-100 dark:border-gray-700 last:border-0">
                                 {editingId === cat.id ? (
                                     <>
                                         <input value={editName} onChange={e => setEditName(e.target.value)}
-                                            className="flex-1 px-2 py-1 border border-gray-300 rounded text-sm outline-none"
+                                            className="flex-1 px-2 py-1 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded text-sm outline-none"
                                             autoFocus />
                                         <button onClick={() => handleUpdate(cat)}
                                             className="text-xs text-green-600 font-medium">✓</button>
                                         <button onClick={() => setEditingId(null)}
-                                            className="text-xs text-gray-400">✕</button>
+                                            className="text-xs text-gray-400 dark:text-gray-500">✕</button>
                                     </>
                                 ) : (
                                     <>
-                                        <span className="flex-1 text-sm text-gray-800">{cat.name}</span>
+                                        <span className="flex-1 text-sm text-gray-800 dark:text-gray-200">{cat.name}</span>
                                         <button onClick={() => { setEditingId(cat.id); setEditName(cat.name); setEditType(cat.type) }}
-                                            className="text-xs text-gray-400 hover:text-gray-700">✏</button>
+                                            className="text-xs text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">✏</button>
                                         <button onClick={() => handleDeactivate(cat)}
                                             className="text-xs text-red-400 hover:text-red-600">✕</button>
                                     </>
@@ -118,7 +118,7 @@ function CategoryModal({ categories, onClose, onSaved }) {
                             </div>
                         ))}
                         {cats.length === 0 && (
-                            <p className="text-xs text-gray-300 py-1">Sin categorías</p>
+                            <p className="text-xs text-gray-300 dark:text-gray-600 py-1">Sin categorías</p>
                         )}
                     </div>
                 ))}
@@ -160,10 +160,10 @@ function EditableCell({ value, color, onSave, isPast, isCurrent }) {
         if (color === 'green') return 'text-green-600 font-medium'
         if (color === 'blue')  return 'text-blue-600 font-medium'
         if (color === 'gray')  return 'text-gray-400 font-medium'
-        return isPast ? 'text-gray-300' : value > 0 ? 'text-gray-800 font-medium' : 'text-gray-300'
+        return isPast ? 'text-gray-300 dark:text-gray-600' : value > 0 ? 'text-gray-800 dark:text-gray-200 font-medium' : 'text-gray-300 dark:text-gray-600'
     }
 
-    const cellBg = isCurrent ? 'bg-blue-50' : isPast ? 'bg-gray-50' : ''
+    const cellBg = isCurrent ? 'bg-blue-50 dark:bg-blue-900/20' : isPast ? 'bg-gray-50 dark:bg-gray-800' : ''
 
     if (editing) {
         return (
@@ -197,7 +197,7 @@ function EditableCell({ value, color, onSave, isPast, isCurrent }) {
     return (
         <td
             onClick={startEdit}
-            className={`px-2 py-1.5 text-right text-sm whitespace-nowrap tabular-nums group/cell ${cellBg} ${getTextCls()} cursor-pointer hover:bg-blue-50/60`}
+            className={`px-2 py-1.5 text-right text-sm whitespace-nowrap tabular-nums group/cell ${cellBg} ${getTextCls()} cursor-pointer hover:bg-blue-50/60 dark:hover:bg-blue-900/10`}
             style={{ minWidth: W_MONTH }}>
             {value > 0
                 ? `$${fmt(value)}`
@@ -220,7 +220,7 @@ export function Flujo() {
     const [cardTotals,   setCardTotals]   = useState([])  // [{month, total}]
     const [showModal,    setShowModal]    = useState(false)
     const [loading,      setLoading]      = useState(true)
-    const [hidePast,     setHidePast]     = useState(false)
+    const [hidePast,     setHidePast]     = useState(true)
 
     const isCurrent = (m) => m === currentMonth && selectedYear === currentYear
     const isPast    = (m) => selectedYear < currentYear || (selectedYear === currentYear && m < currentMonth)
@@ -298,9 +298,9 @@ export function Flujo() {
     const months       = hidePast ? allMonths.filter(m => !isPast(m)) : allMonths
 
     function headerCls(m) {
-        if (isCurrent(m)) return 'bg-blue-50 text-blue-700'
-        if (isPast(m))    return 'bg-gray-100 text-gray-300'
-        return 'bg-gray-50 text-gray-400'
+        if (isCurrent(m)) return 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
+        if (isPast(m))    return 'bg-gray-100 dark:bg-gray-800 text-gray-300 dark:text-gray-600'
+        return 'bg-gray-50 dark:bg-gray-900 text-gray-400 dark:text-gray-500'
     }
 
     if (loading) return <p className="text-center text-gray-400 py-8 text-sm">Cargando…</p>
@@ -311,10 +311,10 @@ export function Flujo() {
             <div className="flex items-center gap-3 mb-5 flex-wrap">
                 <div className="flex items-center gap-1">
                     <button onClick={() => setSelectedYear(y => y - 1)}
-                        className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-500 hover:bg-gray-200 hover:text-gray-900 transition-colors text-lg leading-none">‹</button>
-                    <span className="text-sm font-bold text-gray-800 w-12 text-center tabular-nums">{selectedYear}</span>
+                        className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100 transition-colors text-lg leading-none">‹</button>
+                    <span className="text-sm font-bold text-gray-800 dark:text-gray-200 w-12 text-center tabular-nums">{selectedYear}</span>
                     <button onClick={() => setSelectedYear(y => y + 1)}
-                        className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-500 hover:bg-gray-200 hover:text-gray-900 transition-colors text-lg leading-none">›</button>
+                        className="w-8 h-8 flex items-center justify-center rounded-lg text-gray-500 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-gray-100 transition-colors text-lg leading-none">›</button>
                     {selectedYear !== currentYear && (
                         <button onClick={() => setSelectedYear(currentYear)}
                             className="text-xs text-blue-600 hover:underline ml-1">Hoy</button>
@@ -327,22 +327,22 @@ export function Flujo() {
                         onChange={e => setHidePast(e.target.checked)}
                         className="h-4 w-4 rounded border-gray-300"
                     />
-                    <span className="text-xs font-medium text-gray-500">Ocultar meses anteriores</span>
+                    <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Ocultar meses anteriores</span>
                 </label>
 
                 <button onClick={() => setShowModal(true)}
-                    className="ml-auto px-3 py-1.5 text-xs font-semibold text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-100 transition-colors">
+                    className="ml-auto px-3 py-1.5 text-xs font-semibold text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                     Categorías
                 </button>
             </div>
 
             {/* Matrix */}
-            <div className="overflow-x-auto rounded-xl border border-gray-200 shadow-sm">
+            <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
                 <table className="border-collapse" style={{ width: 'max-content', minWidth: '100%' }}>
                     <thead>
                         {/* Month header row */}
-                        <tr className="border-b-2 border-gray-200">
-                            <th className="sticky left-0 z-20 bg-gray-50 border-r border-gray-200 text-left px-4 py-2.5 text-xs font-bold text-gray-400 uppercase tracking-wide whitespace-nowrap"
+                        <tr className="border-b-2 border-gray-200 dark:border-gray-700">
+                            <th className="sticky left-0 z-20 bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 text-left px-4 py-2.5 text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wide whitespace-nowrap"
                                 style={{ minWidth: W_DETAIL }}>
                                 Concepto
                             </th>
@@ -380,8 +380,8 @@ export function Flujo() {
 
                         {/* ── INCOME section ── */}
                         {/* Total Ingresos row */}
-                        <tr className="border-b border-gray-200 bg-green-50/40">
-                            <td className="sticky left-0 z-10 bg-green-50 border-r border-gray-200 px-4 py-2.5 text-xs font-bold text-green-800 uppercase tracking-wider whitespace-nowrap">
+                        <tr className="border-b border-gray-200 dark:border-gray-700 bg-green-50/40 dark:bg-green-900/10">
+                            <td className="sticky left-0 z-10 bg-green-50 dark:bg-green-900/20 border-r border-gray-200 dark:border-gray-700 px-4 py-2.5 text-xs font-bold text-green-800 dark:text-green-300 uppercase tracking-wider whitespace-nowrap">
                                 Total Ingresos
                             </td>
                             {months.map(m => {
@@ -389,8 +389,8 @@ export function Flujo() {
                                 return (
                                     <td key={m}
                                         className={`px-3 py-2.5 text-right text-sm font-bold whitespace-nowrap tabular-nums ${
-                                            isCurrent(m) ? 'bg-green-100/50' : isPast(m) ? 'bg-gray-50' : 'bg-green-50/40'
-                                        } ${total > 0 ? (isPast(m) ? 'text-gray-400' : 'text-green-700') : 'text-gray-300'}`}
+                                            isCurrent(m) ? 'bg-green-100/50 dark:bg-green-900/20' : isPast(m) ? 'bg-gray-50 dark:bg-gray-800' : 'bg-green-50/40 dark:bg-green-900/10'
+                                        } ${total > 0 ? (isPast(m) ? 'text-gray-400 dark:text-gray-500' : 'text-green-700 dark:text-green-300') : 'text-gray-300 dark:text-gray-600'}`}
                                         style={{ minWidth: W_MONTH }}>
                                         {total > 0 ? `$${fmt(total)}` : ''}
                                     </td>
@@ -400,8 +400,8 @@ export function Flujo() {
 
                         {/* Income category rows */}
                         {incomeCategories.map(cat => (
-                            <tr key={cat.id} className="group border-b border-gray-100 last:border-0">
-                                <td className="sticky left-0 z-10 bg-white group-hover:bg-gray-50 border-r border-gray-100 px-4 py-2 text-sm text-gray-700 whitespace-nowrap transition-colors"
+                            <tr key={cat.id} className="group border-b border-gray-100 dark:border-gray-800 last:border-0">
+                                <td className="sticky left-0 z-10 bg-white dark:bg-gray-900 group-hover:bg-gray-50 dark:group-hover:bg-gray-800 border-r border-gray-100 dark:border-gray-800 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap transition-colors"
                                     style={{ paddingLeft: 24 }}>
                                     {cat.name}
                                 </td>
@@ -420,19 +420,19 @@ export function Flujo() {
 
                         {incomeCategories.length === 0 && (
                             <tr>
-                                <td colSpan={13} className="px-4 py-3 text-xs text-gray-300 text-center">
+                                <td colSpan={13} className="px-4 py-3 text-xs text-gray-300 dark:text-gray-600 text-center">
                                     Sin categorías de ingreso — agregar desde "Categorías"
                                 </td>
                             </tr>
                         )}
 
                         {/* Separator */}
-                        <tr><td colSpan={13} className="p-0 h-px bg-gray-200" /></tr>
+                        <tr><td colSpan={13} className="p-0 h-px bg-gray-200 dark:bg-gray-700" /></tr>
 
                         {/* ── EXPENSE section ── */}
                         {/* Total Egresos row */}
-                        <tr className="border-b border-gray-200 bg-red-50/30">
-                            <td className="sticky left-0 z-10 bg-red-50/60 border-r border-gray-200 px-4 py-2.5 text-xs font-bold text-red-800 uppercase tracking-wider whitespace-nowrap">
+                        <tr className="border-b border-gray-200 dark:border-gray-700 bg-red-50/30 dark:bg-red-900/10">
+                            <td className="sticky left-0 z-10 bg-red-50/60 dark:bg-red-900/20 border-r border-gray-200 dark:border-gray-700 px-4 py-2.5 text-xs font-bold text-red-800 dark:text-red-300 uppercase tracking-wider whitespace-nowrap">
                                 Total Egresos
                             </td>
                             {months.map(m => {
@@ -440,8 +440,8 @@ export function Flujo() {
                                 return (
                                     <td key={m}
                                         className={`px-3 py-2.5 text-right text-sm font-bold whitespace-nowrap tabular-nums ${
-                                            isCurrent(m) ? 'bg-red-100/40' : isPast(m) ? 'bg-gray-50' : 'bg-red-50/30'
-                                        } ${total > 0 ? (isPast(m) ? 'text-gray-400' : 'text-red-700') : 'text-gray-300'}`}
+                                            isCurrent(m) ? 'bg-red-100/40 dark:bg-red-900/20' : isPast(m) ? 'bg-gray-50 dark:bg-gray-800' : 'bg-red-50/30 dark:bg-red-900/10'
+                                        } ${total > 0 ? (isPast(m) ? 'text-gray-400 dark:text-gray-500' : 'text-red-700 dark:text-red-300') : 'text-gray-300 dark:text-gray-600'}`}
                                         style={{ minWidth: W_MONTH }}>
                                         {total > 0 ? `$${fmt(total)}` : ''}
                                     </td>
@@ -450,8 +450,8 @@ export function Flujo() {
                         </tr>
 
                         {/* Tarjetas de crédito — read-only */}
-                        <tr className="group border-b border-gray-100">
-                            <td className="sticky left-0 z-10 bg-white group-hover:bg-gray-50 border-r border-gray-100 px-4 py-2 text-sm text-gray-600 whitespace-nowrap transition-colors"
+                        <tr className="group border-b border-gray-100 dark:border-gray-800">
+                            <td className="sticky left-0 z-10 bg-white dark:bg-gray-900 group-hover:bg-gray-50 dark:group-hover:bg-gray-800 border-r border-gray-100 dark:border-gray-800 px-4 py-2 text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap transition-colors"
                                 style={{ paddingLeft: 24 }}>
                                 💳 Tarjetas de crédito
                             </td>
@@ -462,14 +462,14 @@ export function Flujo() {
                                 const past    = isPast(m)
                                 const cur     = isCurrent(m)
                                 const textCls = total > 0
-                                    ? past    ? 'text-gray-300 font-medium'
+                                    ? past    ? 'text-gray-300 dark:text-gray-600 font-medium'
                                     : pending ? 'text-orange-500 font-medium'
-                                    :           'text-gray-600 font-medium'
-                                    : 'text-gray-200'
+                                    :           'text-gray-600 dark:text-gray-400 font-medium'
+                                    : 'text-gray-200 dark:text-gray-700'
                                 return (
                                     <td key={m}
                                         className={`px-2 py-2 text-right text-sm whitespace-nowrap tabular-nums ${
-                                            cur ? 'bg-blue-50' : past ? 'bg-gray-50' : ''
+                                            cur ? 'bg-blue-50 dark:bg-blue-900/20' : past ? 'bg-gray-50 dark:bg-gray-800' : ''
                                         } ${textCls}`}
                                         style={{ minWidth: W_MONTH }}>
                                         {total > 0 ? `${pending ? '~' : ''}$${fmt(total)}` : ''}
@@ -480,8 +480,8 @@ export function Flujo() {
 
                         {/* Expense category rows */}
                         {expenseCategories.map(cat => (
-                            <tr key={cat.id} className="group border-b border-gray-100 last:border-0">
-                                <td className="sticky left-0 z-10 bg-white group-hover:bg-gray-50 border-r border-gray-100 px-4 py-2 text-sm text-gray-700 whitespace-nowrap transition-colors"
+                            <tr key={cat.id} className="group border-b border-gray-100 dark:border-gray-800 last:border-0">
+                                <td className="sticky left-0 z-10 bg-white dark:bg-gray-900 group-hover:bg-gray-50 dark:group-hover:bg-gray-800 border-r border-gray-100 dark:border-gray-800 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap transition-colors"
                                     style={{ paddingLeft: 24 }}>
                                     {cat.name}
                                 </td>
@@ -500,7 +500,7 @@ export function Flujo() {
 
                         {expenseCategories.length === 0 && (
                             <tr>
-                                <td colSpan={13} className="px-4 py-3 text-xs text-gray-300 text-center">
+                                <td colSpan={13} className="px-4 py-3 text-xs text-gray-300 dark:text-gray-600 text-center">
                                     Sin categorías de egreso — agregar desde "Categorías"
                                 </td>
                             </tr>
@@ -510,15 +510,15 @@ export function Flujo() {
             </div>
 
             {/* Legend */}
-            <div className="flex items-center gap-4 mt-3 text-xs text-gray-400">
+            <div className="flex items-center gap-4 mt-3 text-xs text-gray-400 dark:text-gray-500">
                 <span className="flex items-center gap-1">
-                    <span className="inline-block w-3 h-3 rounded-sm bg-blue-50 border border-blue-200" />
+                    <span className="inline-block w-3 h-3 rounded-sm bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700" />
                     mes actual
                 </span>
                 <span className="flex items-center gap-1 text-orange-400">
                     ~$ estimado (recurrentes pendientes)
                 </span>
-                <span className="text-gray-300">· clic en celda para editar</span>
+                <span className="text-gray-300 dark:text-gray-600">· clic en celda para editar</span>
             </div>
 
             {/* Category modal */}

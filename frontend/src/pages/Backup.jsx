@@ -68,10 +68,10 @@ export function Backup() {
         <div className="max-w-md space-y-8">
 
             {/* ── Export ── */}
-            <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-3">
-                <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Exportar</h2>
-                <p className="text-sm text-gray-500 leading-relaxed">
-                    Genera un archivo <code className="text-xs bg-gray-100 px-1 py-0.5 rounded">.sql</code> con
+            <div className="bg-white dark:bg-gray-800 dark:border-gray-700 rounded-2xl border border-gray-200 p-6 space-y-3">
+                <h2 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Exportar</h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
+                    Genera un archivo <code className="text-xs bg-gray-100 dark:bg-gray-700 px-1 py-0.5 rounded">.sql</code> con
                     todos los datos actuales de la base de datos.
                 </p>
                 <button
@@ -84,12 +84,12 @@ export function Backup() {
             </div>
 
             {/* ── Import ── */}
-            <div className="bg-white rounded-2xl border border-gray-200 p-6 space-y-4">
-                <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest">Restaurar</h2>
+            <div className="bg-white dark:bg-gray-800 dark:border-gray-700 rounded-2xl border border-gray-200 p-6 space-y-4">
+                <h2 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Restaurar</h2>
 
-                <div className="flex items-start gap-2.5 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3">
+                <div className="flex items-start gap-2.5 bg-amber-50 dark:bg-amber-900/30 dark:border-amber-700 border border-amber-200 rounded-xl px-4 py-3">
                     <span className="flex-shrink-0 mt-0.5">⚠️</span>
-                    <p className="text-xs text-amber-800 leading-relaxed">
+                    <p className="text-xs text-amber-800 dark:text-amber-300 leading-relaxed">
                         Esto reemplazará <strong>todos los datos existentes</strong>.
                         Esta acción no se puede deshacer.
                     </p>
@@ -107,10 +107,10 @@ export function Backup() {
                                 setImportFile(e.target.files[0] ?? null)
                                 setResult(null)
                             }}
-                            className="block w-full text-sm text-gray-600
+                            className="block w-full text-sm text-gray-600 dark:text-gray-400
                                 file:mr-3 file:py-1.5 file:px-3 file:rounded-lg file:border-0
                                 file:text-xs file:font-semibold file:bg-gray-100 file:text-gray-700
-                                hover:file:bg-gray-200"
+                                hover:file:bg-gray-200 dark:file:bg-gray-700 dark:file:text-gray-300"
                         />
                     </label>
 
@@ -121,7 +121,7 @@ export function Backup() {
                             onChange={e => setConfirmed(e.target.checked)}
                             className="mt-0.5 h-4 w-4 rounded border-gray-300"
                         />
-                        <span className="text-sm text-gray-700 leading-snug">
+                        <span className="text-sm text-gray-700 dark:text-gray-300 leading-snug">
                             Entiendo que esto reemplazará todos los datos actuales
                         </span>
                     </label>
@@ -147,7 +147,7 @@ export function Backup() {
             </div>
 
             {/* ── Reset ── */}
-            <div className="bg-white rounded-2xl border border-red-200 p-6 space-y-4">
+            <div className="bg-white dark:bg-gray-800 dark:border-gray-700 dark:border-red-900 rounded-2xl border border-red-200 p-6 space-y-4">
                 <h2 className="text-xs font-bold text-red-400 uppercase tracking-widest">Resetear base de datos</h2>
 
                 <div className="flex items-start gap-2.5 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
@@ -170,7 +170,7 @@ export function Backup() {
                             }}
                             className="mt-0.5 h-4 w-4 rounded border-gray-300"
                         />
-                        <span className="text-sm text-gray-700 leading-snug">
+                        <span className="text-sm text-gray-700 dark:text-gray-300 leading-snug">
                             Entiendo que esto eliminará todos los datos permanentemente
                         </span>
                     </label>
@@ -179,14 +179,14 @@ export function Backup() {
                         <div className="space-y-2">
                             <label className="block">
                                 <span className="text-xs font-semibold text-gray-500 uppercase tracking-wide block mb-1.5">
-                                    Escribí <code className="text-xs bg-gray-100 px-1 py-0.5 rounded">RESET</code> para confirmar
+                                    Escribí <code className="text-xs bg-gray-100 dark:bg-gray-700 px-1 py-0.5 rounded">RESET</code> para confirmar
                                 </span>
                                 <input
                                     type="text"
                                     value={resetTyped}
                                     onChange={e => setResetTyped(e.target.value)}
                                     placeholder="RESET"
-                                    className="w-full border border-gray-300 rounded-xl px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-red-400"
+                                    className="w-full border border-gray-300 dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600 rounded-xl px-3 py-2 text-sm font-mono focus:outline-none focus:ring-2 focus:ring-red-400"
                                 />
                             </label>
 
