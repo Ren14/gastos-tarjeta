@@ -108,6 +108,11 @@ func main() {
 		// Historial
 		r.Get("/audit", handlers.GetAuditLog)
 
+		// TODO Tasks
+		r.Get("/todos", handlers.GetTodos)
+		r.Post("/todos/complete", handlers.CompleteTodo)
+		r.Post("/todos/uncomplete", handlers.UncompleteTodo)
+
 		// Dashboards
 		r.Get("/dashboards/card-spending", handlers.GetCardSpending)
 		r.Get("/dashboards/cashflow", handlers.GetCashflowDashboard)

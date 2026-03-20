@@ -7,6 +7,7 @@ import { CardsPage, RecurringPage, CotizacionPage, CategoriesPage } from './page
 import { Divisiones } from './pages/Divisiones'
 import { Dashboards } from './pages/Dashboards'
 import { Cobranzas } from './pages/Cobranzas'
+import { TodoTasks } from './pages/TodoTasks'
 import { Historial } from './pages/Historial'
 import { Backup } from './pages/Backup'
 import { Login } from './pages/Login'
@@ -15,6 +16,7 @@ import { setOnUnauthorized } from './api/client'
 
 const NAV_ITEMS = [
     { id: 'load',       icon: '+',   label: 'Cargar gasto' },
+    { id: 'todos',      icon: '✅',  label: 'TODO' },
     { id: 'flujo',      icon: '💰',  label: 'Flujo' },
     { id: 'cobranzas',  icon: '🧾',  label: 'Cobranzas' },
     { id: 'dashboards', icon: '📈',  label: 'Dashboards' },
@@ -228,6 +230,7 @@ function AppContent() {
                             }} />
                         </div>
                     )}
+                    {activeTab === 'todos'      && <TodoTasks />}
                     {activeTab === 'dashboard'  && <Dashboard key={savedCount} />}
                     {activeTab === 'dashboards' && <Dashboards />}
                     {activeTab === 'flujo'      && <Flujo />}

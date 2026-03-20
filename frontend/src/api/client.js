@@ -133,6 +133,11 @@ export const api = {
     // Cobranzas
     getCobranzas: (year) => request(`/cobranzas?year=${year}`),
 
+    // TODO Tasks
+    getTodos: (month, year) => request(`/todos?month=${month}&year=${year}`),
+    completeTodo: (data) => request('/todos/complete', { method: 'POST', body: JSON.stringify(data) }),
+    uncompleteTodo: (data) => request('/todos/uncomplete', { method: 'POST', body: JSON.stringify(data) }),
+
     // Audit log
     getAuditLog: (limit = 50, offset = 0, entityType = '') => {
         const params = new URLSearchParams({ limit, offset })
