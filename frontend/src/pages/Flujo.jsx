@@ -415,7 +415,7 @@ function EditableCell({ value, color, onSave, isPast, isCurrent }) {
 // ── Sortable category row ──────────────────────────────────────────────────────
 
 function SortableCategoryRow({ cat, months, entryMap, handleSave, isPast, isCurrent,
-    clasificaciones, savedClasif, handleClasifChange, clasifW, clasifCollapsed }) {
+    clasificaciones, savedClasif, handleClasifChange, clasifW, clasifCollapsed, detailW }) {
     const { attributes, listeners, setNodeRef, isDragging } = useSortable({
         id: cat.id,
         animateLayoutChanges: () => false,
@@ -432,7 +432,7 @@ function SortableCategoryRow({ cat, months, entryMap, handleSave, isPast, isCurr
                 )}
             </td>
             <td className="sticky z-20 bg-white dark:bg-gray-900 group-hover:bg-gray-50 dark:group-hover:bg-gray-800 border-r border-gray-100 dark:border-gray-800 py-2 text-sm text-gray-700 dark:text-gray-300 overflow-hidden transition-colors"
-                style={{ left: clasifW, minWidth: W_DETAIL, width: W_DETAIL, paddingLeft: 4, paddingRight: 4, transition: 'left 0.25s ease' }}>
+                style={{ left: clasifW, minWidth: detailW, width: detailW, paddingLeft: 4, paddingRight: 4, transition: 'left 0.25s ease' }}>
                 <div className="flex items-center gap-0.5 min-w-0">
                     <span {...listeners} {...attributes}
                         className="flex-shrink-0 text-gray-200 dark:text-gray-700 hover:text-gray-400 dark:hover:text-gray-500 cursor-grab active:cursor-grabbing select-none opacity-0 group-hover:opacity-100 transition-opacity leading-none px-0.5"
@@ -483,6 +483,7 @@ export function Flujo() {
     const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }))
 
     const clasifW = clasifCollapsed ? W_CLASIF_COLLAPSED : W_CLASIF
+    const detailW = window.matchMedia('(min-width: 1280px)').matches ? W_DETAIL * 2 : W_DETAIL
 
     const isCurrent = (m) => m === currentMonth && selectedYear === currentYear
     const isPast    = (m) => selectedYear < currentYear || (selectedYear === currentYear && m < currentMonth)
@@ -644,7 +645,7 @@ export function Flujo() {
                 onDragEnd={handleDragEnd}
                 onDragCancel={() => setDragActiveId(null)}>
             <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
-                <table className="border-collapse" style={{ width: clasifW + W_DETAIL + months.length * W_MONTH, minWidth: '100%', tableLayout: 'fixed' }}>
+                <table className="border-collapse" style={{ width: clasifW + detailW + months.length * W_MONTH, minWidth: '100%', tableLayout: 'fixed' }}>
                     <thead>
                         <tr className="border-b-2 border-gray-200 dark:border-gray-700">
                             {/* ── thead sticky cells: z-30 so they sit above all tbody sticky cells (z-20) ── */}
@@ -670,7 +671,7 @@ export function Flujo() {
                                 )}
                             </th>
                             <th className="sticky z-30 bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 text-left px-4 py-2.5 text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wide whitespace-nowrap overflow-hidden"
-                                style={{ left: clasifW, minWidth: W_DETAIL, width: W_DETAIL, transition: 'left 0.25s ease' }}>
+                                style={{ left: clasifW, minWidth: detailW, width: detailW, transition: 'left 0.25s ease' }}>
                                 Concepto
                             </th>
                             {months.map(m => (
@@ -693,7 +694,7 @@ export function Flujo() {
                                 —
                             </td>
                             <td className="sticky z-20 bg-gray-900 border-r border-gray-700 px-4 py-3 text-xs font-bold text-white uppercase tracking-wider overflow-hidden"
-                                style={{ left: clasifW, minWidth: W_DETAIL, width: W_DETAIL, transition: 'left 0.25s ease' }}>
+                                style={{ left: clasifW, minWidth: detailW, width: detailW, transition: 'left 0.25s ease' }}>
                                 <div title="Disponible" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Disponible</div>
                             </td>
                             {months.map(m => {
@@ -721,7 +722,7 @@ export function Flujo() {
                                 —
                             </td>
                             <td className="sticky z-20 bg-green-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 px-4 py-2.5 text-xs font-bold text-green-800 dark:text-green-300 uppercase tracking-wider overflow-hidden"
-                                style={{ left: clasifW, minWidth: W_DETAIL, width: W_DETAIL, transition: 'left 0.25s ease' }}>
+                                style={{ left: clasifW, minWidth: detailW, width: detailW, transition: 'left 0.25s ease' }}>
                                 <div title="Total Ingresos" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Total Ingresos</div>
                             </td>
                             {months.map(m => {
@@ -746,7 +747,7 @@ export function Flujo() {
                                     isPast={isPast} isCurrent={isCurrent}
                                     clasificaciones={clasificaciones} savedClasif={savedClasif}
                                     handleClasifChange={handleClasifChange}
-                                    clasifW={clasifW} clasifCollapsed={clasifCollapsed} />
+                                    clasifW={clasifW} clasifCollapsed={clasifCollapsed} detailW={detailW} />
                             ))}
                         </SortableContext>
 
@@ -769,7 +770,7 @@ export function Flujo() {
                                 —
                             </td>
                             <td className="sticky z-20 bg-red-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 px-4 py-2.5 text-xs font-bold text-red-800 dark:text-red-300 uppercase tracking-wider overflow-hidden"
-                                style={{ left: clasifW, minWidth: W_DETAIL, width: W_DETAIL, transition: 'left 0.25s ease' }}>
+                                style={{ left: clasifW, minWidth: detailW, width: detailW, transition: 'left 0.25s ease' }}>
                                 <div title="Total Egresos" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Total Egresos</div>
                             </td>
                             {months.map(m => {
@@ -793,7 +794,7 @@ export function Flujo() {
                                 —
                             </td>
                             <td className="sticky z-20 bg-white dark:bg-gray-900 group-hover:bg-gray-50 dark:group-hover:bg-gray-800 border-r border-gray-100 dark:border-gray-800 py-2 text-sm text-gray-600 dark:text-gray-400 overflow-hidden transition-colors"
-                                style={{ left: clasifW, minWidth: W_DETAIL, width: W_DETAIL, paddingLeft: 24, paddingRight: 8, transition: 'left 0.25s ease' }}>
+                                style={{ left: clasifW, minWidth: detailW, width: detailW, paddingLeft: 24, paddingRight: 8, transition: 'left 0.25s ease' }}>
                                 <div title="Tarjetas de crédito" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>💳 Tarjetas de crédito</div>
                             </td>
                             {months.map(m => {
@@ -827,7 +828,7 @@ export function Flujo() {
                                     isPast={isPast} isCurrent={isCurrent}
                                     clasificaciones={clasificaciones} savedClasif={savedClasif}
                                     handleClasifChange={handleClasifChange}
-                                    clasifW={clasifW} clasifCollapsed={clasifCollapsed} />
+                                    clasifW={clasifW} clasifCollapsed={clasifCollapsed} detailW={detailW} />
                             ))}
                         </SortableContext>
 
