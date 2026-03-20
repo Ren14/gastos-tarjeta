@@ -9,7 +9,7 @@ import { SortableContext, useSortable, verticalListSortingStrategy, arrayMove } 
 const MONTHS_SHORT = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']
 const W_CLASIF          = 140
 const W_CLASIF_COLLAPSED = 20
-const W_DETAIL = 40
+const W_DETAIL = 160
 const W_MONTH  = 100
 
 const COLOR_OPTIONS = [
