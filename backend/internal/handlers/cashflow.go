@@ -15,11 +15,13 @@ type monthKey struct{ Month, Year int }
 // ── Category structs ──────────────────────────────────────────────────────────
 
 type CashflowCategory struct {
-	ID        int    `json:"id"`
-	Name      string `json:"name"`
-	Type      string `json:"type"` // "income" | "expense"
-	SortOrder int    `json:"sort_order"`
-	Active    bool   `json:"active"`
+	ID                int    `json:"id"`
+	Name              string `json:"name"`
+	Type              string `json:"type"` // "income" | "expense"
+	SortOrder         int    `json:"sort_order"`
+	Active            bool   `json:"active"`
+	ClasificacionID   *int   `json:"clasificacion_id"`
+	ClasificacionName string `json:"clasificacion_name"`
 }
 
 // ── Entry structs ─────────────────────────────────────────────────────────────
@@ -38,7 +40,12 @@ type CashflowEntry struct {
 
 func GetCashflowCategories(w http.ResponseWriter, r *http.Request) {
 	rows, err := db.Pool.Query(r.Context(),
-		`SELECT id, name, type, sort_order, active FROM cashflow_categories WHERE active = true ORDER BY type, sort_order, name`)
+		`SELECT c.id, c.name, c.type, c.sort_order, c.active,
+		        c.clasificacion_id, COALESCE(cl.name, '') AS clasificacion_name
+		 FROM cashflow_categories c
+		 LEFT JOIN flujo_clasificaciones cl ON cl.id = c.clasificacion_id
+		 WHERE c.active = true
+		 ORDER BY c.type, c.sort_order, c.name`)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -48,7 +55,8 @@ func GetCashflowCategories(w http.ResponseWriter, r *http.Request) {
 	cats := []CashflowCategory{}
 	for rows.Next() {
 		var c CashflowCategory
-		if err := rows.Scan(&c.ID, &c.Name, &c.Type, &c.SortOrder, &c.Active); err != nil {
+		if err := rows.Scan(&c.ID, &c.Name, &c.Type, &c.SortOrder, &c.Active,
+			&c.ClasificacionID, &c.ClasificacionName); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}

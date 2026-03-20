@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useRef } from 'react'
 import { api } from '../api/client'
 
 const MONTHS_SHORT = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']
+const W_CLASIF = 140
 const W_DETAIL = 200
 const W_MONTH  = 100
 
@@ -14,6 +15,29 @@ const COLOR_OPTIONS = [
 
 function fmt(n) {
     return n.toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })
+}
+
+// ── Classification dropdown ────────────────────────────────────────────────────
+
+function ClasifSelect({ cat, clasificaciones, savedClasif, onChange }) {
+    return (
+        <div className="flex items-center gap-1 min-w-0">
+            <select
+                value={cat.clasificacion_id ?? ''}
+                onChange={e => {
+                    const id = parseInt(e.target.value)
+                    if (!isNaN(id)) onChange(cat.id, id)
+                }}
+                className="flex-1 min-w-0 text-xs text-gray-600 dark:text-gray-400 bg-transparent border-0 outline-none cursor-pointer py-0.5 focus:ring-0"
+            >
+                {cat.clasificacion_id == null && <option value="">— elegir —</option>}
+                {clasificaciones.map(cl => (
+                    <option key={cl.id} value={cl.id}>{cl.name}</option>
+                ))}
+            </select>
+            <span className={`text-green-500 text-xs flex-shrink-0 transition-opacity duration-500 ${savedClasif[cat.id] ? 'opacity-100' : 'opacity-0'}`}>✓</span>
+        </div>
+    )
 }
 
 // ── Category management modal ─────────────────────────────────────────────────
@@ -65,63 +89,66 @@ function CategoryModal({ categories, onClose, onSaved }) {
 
     return (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={onClose}>
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md p-6" onClick={e => e.stopPropagation()}>
-                <div className="flex items-center justify-between mb-5">
-                    <h2 className="text-base font-bold text-gray-900 dark:text-gray-100">Categorías de Flujo</h2>
-                    <button onClick={onClose} className="text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 text-xl leading-none">×</button>
+            <div
+                className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md flex flex-col max-h-[85vh]"
+                onClick={e => e.stopPropagation()}
+            >
+                <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-gray-100 dark:border-gray-700 flex-shrink-0">
+                    <h2 className="text-base font-bold text-gray-900 dark:text-gray-100">Conceptos de Flujo</h2>
+                    <button onClick={onClose} className="text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 text-xl leading-none w-7 h-7 flex items-center justify-center rounded">×</button>
                 </div>
 
-                {/* Create form */}
-                <form onSubmit={handleCreate} className="flex gap-2 mb-5">
-                    <input
-                        value={name}
-                        onChange={e => setName(e.target.value)}
-                        placeholder="Nueva categoría…"
-                        className="flex-1 px-3 py-2 border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg text-sm outline-none focus:border-gray-400"
-                    />
-                    <select value={type} onChange={e => setType(e.target.value)}
-                        className="px-2 py-2 border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg text-sm outline-none">
-                        <option value="income">Ingreso</option>
-                        <option value="expense">Egreso</option>
-                    </select>
-                    <button type="submit" disabled={saving || !name.trim()}
-                        className="px-3 py-2 bg-gray-900 text-white text-sm rounded-lg disabled:opacity-40">
-                        +
-                    </button>
-                </form>
+                <div className="overflow-y-auto flex-1 px-6 pt-4 pb-6">
+                    <form onSubmit={handleCreate} className="flex gap-2 mb-5">
+                        <input
+                            value={name}
+                            onChange={e => setName(e.target.value)}
+                            placeholder="Nuevo concepto…"
+                            className="flex-1 px-3 py-2 border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg text-sm outline-none focus:border-gray-400"
+                        />
+                        <select value={type} onChange={e => setType(e.target.value)}
+                            className="px-2 py-2 border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg text-sm outline-none">
+                            <option value="income">Ingreso</option>
+                            <option value="expense">Egreso</option>
+                        </select>
+                        <button type="submit" disabled={saving || !name.trim()}
+                            className="px-3 py-2 bg-gray-900 text-white text-sm rounded-lg disabled:opacity-40">
+                            +
+                        </button>
+                    </form>
 
-                {/* Lists */}
-                {[['income', 'Ingresos', income], ['expense', 'Egresos', expense]].map(([t, label, cats]) => (
-                    <div key={t} className="mb-4">
-                        <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2">{label}</p>
-                        {cats.map(cat => (
-                            <div key={cat.id} className="flex items-center gap-2 py-1.5 border-b border-gray-100 dark:border-gray-700 last:border-0">
-                                {editingId === cat.id ? (
-                                    <>
-                                        <input value={editName} onChange={e => setEditName(e.target.value)}
-                                            className="flex-1 px-2 py-1 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded text-sm outline-none"
-                                            autoFocus />
-                                        <button onClick={() => handleUpdate(cat)}
-                                            className="text-xs text-green-600 font-medium">✓</button>
-                                        <button onClick={() => setEditingId(null)}
-                                            className="text-xs text-gray-400 dark:text-gray-500">✕</button>
-                                    </>
-                                ) : (
-                                    <>
-                                        <span className="flex-1 text-sm text-gray-800 dark:text-gray-200">{cat.name}</span>
-                                        <button onClick={() => { setEditingId(cat.id); setEditName(cat.name); setEditType(cat.type) }}
-                                            className="text-xs text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">✏</button>
-                                        <button onClick={() => handleDeactivate(cat)}
-                                            className="text-xs text-red-400 hover:text-red-600">✕</button>
-                                    </>
-                                )}
-                            </div>
-                        ))}
-                        {cats.length === 0 && (
-                            <p className="text-xs text-gray-300 dark:text-gray-600 py-1">Sin categorías</p>
-                        )}
-                    </div>
-                ))}
+                    {[['income', 'Ingresos', income], ['expense', 'Egresos', expense]].map(([t, label, cats]) => (
+                        <div key={t} className="mb-4">
+                            <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2">{label}</p>
+                            {cats.map(cat => (
+                                <div key={cat.id} className="flex items-center gap-2 py-1.5 border-b border-gray-100 dark:border-gray-700 last:border-0">
+                                    {editingId === cat.id ? (
+                                        <>
+                                            <input value={editName} onChange={e => setEditName(e.target.value)}
+                                                className="flex-1 px-2 py-1 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded text-sm outline-none"
+                                                autoFocus />
+                                            <button onClick={() => handleUpdate(cat)}
+                                                className="text-xs text-green-600 font-medium">✓</button>
+                                            <button onClick={() => setEditingId(null)}
+                                                className="text-xs text-gray-400 dark:text-gray-500">✕</button>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <span className="flex-1 text-sm text-gray-800 dark:text-gray-200">{cat.name}</span>
+                                            <button onClick={() => { setEditingId(cat.id); setEditName(cat.name); setEditType(cat.type) }}
+                                                className="text-xs text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">✏</button>
+                                            <button onClick={() => handleDeactivate(cat)}
+                                                className="text-xs text-red-400 hover:text-red-600">✕</button>
+                                        </>
+                                    )}
+                                </div>
+                            ))}
+                            {cats.length === 0 && (
+                                <p className="text-xs text-gray-300 dark:text-gray-600 py-1">Sin conceptos</p>
+                            )}
+                        </div>
+                    ))}
+                </div>
             </div>
         </div>
     )
@@ -207,6 +234,10 @@ function EditableCell({ value, color, onSave, isPast, isCurrent }) {
     )
 }
 
+// ── Sticky cell helpers ────────────────────────────────────────────────────────
+// z-30 = thead sticky, z-20 = tbody sticky (ensures header stays above data on both axes)
+// Backgrounds must be fully opaque — opacity variants bleed through on horizontal scroll.
+
 // ── Main page ─────────────────────────────────────────────────────────────────
 
 export function Flujo() {
@@ -214,13 +245,15 @@ export function Flujo() {
     const currentYear  = now.getFullYear()
     const currentMonth = now.getMonth() + 1
 
-    const [selectedYear, setSelectedYear] = useState(currentYear)
-    const [categories,   setCategories]   = useState([])
-    const [entries,      setEntries]      = useState([])
-    const [cardTotals,   setCardTotals]   = useState([])  // [{month, total}]
-    const [showModal,    setShowModal]    = useState(false)
-    const [loading,      setLoading]      = useState(true)
-    const [hidePast,     setHidePast]     = useState(true)
+    const [selectedYear,    setSelectedYear]    = useState(currentYear)
+    const [categories,      setCategories]      = useState([])
+    const [clasificaciones, setClasificaciones] = useState([])
+    const [entries,         setEntries]         = useState([])
+    const [cardTotals,      setCardTotals]      = useState([])
+    const [showModal,       setShowModal]       = useState(false)
+    const [loading,         setLoading]         = useState(true)
+    const [hidePast,        setHidePast]        = useState(true)
+    const [savedClasif,     setSavedClasif]     = useState({})
 
     const isCurrent = (m) => m === currentMonth && selectedYear === currentYear
     const isPast    = (m) => selectedYear < currentYear || (selectedYear === currentYear && m < currentMonth)
@@ -228,14 +261,16 @@ export function Flujo() {
     async function loadAll() {
         setLoading(true)
         try {
-            const [cats, ents, cards] = await Promise.all([
+            const [cats, ents, cards, clasifs] = await Promise.all([
                 api.getCashflowCategories(),
                 api.getCashflowEntries(selectedYear),
                 api.getCardTotals(selectedYear),
+                api.getClasificaciones(),
             ])
             setCategories(cats ?? [])
             setEntries(ents ?? [])
             setCardTotals(cards ?? [])
+            setClasificaciones(clasifs ?? [])
         } finally {
             setLoading(false)
         }
@@ -245,7 +280,6 @@ export function Flujo() {
 
     async function handleSave(categoryId, month, amount, color) {
         await api.saveCashflowEntry({ category_id: categoryId, month, year: selectedYear, amount, color: color ?? null, notes: '' })
-        // Optimistic local update
         setEntries(prev => {
             const idx = prev.findIndex(e => e.category_id === categoryId && e.month === month && e.year === selectedYear)
             if (idx >= 0) {
@@ -257,7 +291,15 @@ export function Flujo() {
         })
     }
 
-    // Build lookup: entryMap[categoryId][month] = { amount, color }
+    async function handleClasifChange(categoryId, clasificacionId) {
+        await api.updateCategoryClasificacion(categoryId, clasificacionId)
+        setCategories(prev => prev.map(c =>
+            c.id === categoryId ? { ...c, clasificacion_id: clasificacionId } : c
+        ))
+        setSavedClasif(prev => ({ ...prev, [categoryId]: true }))
+        setTimeout(() => setSavedClasif(prev => ({ ...prev, [categoryId]: false })), 1500)
+    }
+
     const entryMap = useMemo(() => {
         const m = {}
         for (const e of entries) {
@@ -267,7 +309,6 @@ export function Flujo() {
         return m
     }, [entries])
 
-    // cardTotals as map indexed by month (1-12)
     const cardTotalByMonth = useMemo(() => {
         const t = {}
         for (const ct of cardTotals) t[ct.month] = { total: ct.total, pending: ct.has_pending_recurring ?? false }
@@ -277,8 +318,7 @@ export function Flujo() {
     const incomeCategories  = categories.filter(c => c.type === 'income')
     const expenseCategories = categories.filter(c => c.type === 'expense')
 
-    // Per-month totals
-    const incomeTotals  = useMemo(() => Array.from({ length: 12 }, (_, i) => {
+    const incomeTotals = useMemo(() => Array.from({ length: 12 }, (_, i) => {
         const m = i + 1
         return incomeCategories.reduce((sum, cat) => sum + (entryMap[cat.id]?.[m]?.amount ?? 0), 0)
     }), [incomeCategories, entryMap])
@@ -294,8 +334,9 @@ export function Flujo() {
         [incomeTotals, expenseTotals]
     )
 
-    const allMonths    = [1,2,3,4,5,6,7,8,9,10,11,12]
-    const months       = hidePast ? allMonths.filter(m => !isPast(m)) : allMonths
+    const allMonths = [1,2,3,4,5,6,7,8,9,10,11,12]
+    const months    = hidePast ? allMonths.filter(m => !isPast(m)) : allMonths
+    const totalCols = months.length + 2
 
     function headerCls(m) {
         if (isCurrent(m)) return 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
@@ -332,7 +373,7 @@ export function Flujo() {
 
                 <button onClick={() => setShowModal(true)}
                     className="ml-auto px-3 py-1.5 text-xs font-semibold text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-                    Categorías
+                    Conceptos
                 </button>
             </div>
 
@@ -340,10 +381,14 @@ export function Flujo() {
             <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
                 <table className="border-collapse" style={{ width: 'max-content', minWidth: '100%' }}>
                     <thead>
-                        {/* Month header row */}
                         <tr className="border-b-2 border-gray-200 dark:border-gray-700">
-                            <th className="sticky left-0 z-20 bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 text-left px-4 py-2.5 text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wide whitespace-nowrap"
-                                style={{ minWidth: W_DETAIL }}>
+                            {/* ── thead sticky cells: z-30 so they sit above all tbody sticky cells (z-20) ── */}
+                            <th className="sticky left-0 z-30 bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 text-left px-3 py-2.5 text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wide whitespace-nowrap"
+                                style={{ minWidth: W_CLASIF, width: W_CLASIF }}>
+                                Clasificación
+                            </th>
+                            <th className="sticky z-30 bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 text-left px-4 py-2.5 text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wide whitespace-nowrap"
+                                style={{ left: W_CLASIF, minWidth: W_DETAIL, width: W_DETAIL }}>
                                 Concepto
                             </th>
                             {months.map(m => (
@@ -356,9 +401,17 @@ export function Flujo() {
                         </tr>
                     </thead>
                     <tbody>
+                        {/* ── tbody sticky cells: z-20 ── */}
+                        {/* ── Backgrounds must be fully opaque (no /20 /50 /60 variants) ── */}
+
                         {/* Disponible row */}
                         <tr className="border-b-2 border-gray-300">
-                            <td className="sticky left-0 z-10 bg-gray-900 border-r border-gray-700 px-4 py-3 text-xs font-bold text-white uppercase tracking-wider whitespace-nowrap">
+                            <td className="sticky left-0 z-20 bg-gray-900 border-r border-gray-700 px-3 py-3 text-xs text-gray-600 whitespace-nowrap text-center"
+                                style={{ minWidth: W_CLASIF, width: W_CLASIF }}>
+                                —
+                            </td>
+                            <td className="sticky z-20 bg-gray-900 border-r border-gray-700 px-4 py-3 text-xs font-bold text-white uppercase tracking-wider whitespace-nowrap"
+                                style={{ left: W_CLASIF, minWidth: W_DETAIL, width: W_DETAIL }}>
                                 Disponible
                             </td>
                             {months.map(m => {
@@ -379,9 +432,14 @@ export function Flujo() {
                         </tr>
 
                         {/* ── INCOME section ── */}
-                        {/* Total Ingresos row */}
                         <tr className="border-b border-gray-200 dark:border-gray-700 bg-green-50/40 dark:bg-green-900/10">
-                            <td className="sticky left-0 z-10 bg-green-50 dark:bg-green-900/20 border-r border-gray-200 dark:border-gray-700 px-4 py-2.5 text-xs font-bold text-green-800 dark:text-green-300 uppercase tracking-wider whitespace-nowrap">
+                            {/* Sticky cells use solid bg — opaque so scrolling content doesn't show through */}
+                            <td className="sticky left-0 z-20 bg-green-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 px-3 py-2.5 text-xs text-gray-400 whitespace-nowrap text-center"
+                                style={{ minWidth: W_CLASIF, width: W_CLASIF }}>
+                                —
+                            </td>
+                            <td className="sticky z-20 bg-green-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 px-4 py-2.5 text-xs font-bold text-green-800 dark:text-green-300 uppercase tracking-wider whitespace-nowrap"
+                                style={{ left: W_CLASIF, minWidth: W_DETAIL, width: W_DETAIL }}>
                                 Total Ingresos
                             </td>
                             {months.map(m => {
@@ -401,8 +459,17 @@ export function Flujo() {
                         {/* Income category rows */}
                         {incomeCategories.map(cat => (
                             <tr key={cat.id} className="group border-b border-gray-100 dark:border-gray-800 last:border-0">
-                                <td className="sticky left-0 z-10 bg-white dark:bg-gray-900 group-hover:bg-gray-50 dark:group-hover:bg-gray-800 border-r border-gray-100 dark:border-gray-800 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap transition-colors"
-                                    style={{ paddingLeft: 24 }}>
+                                <td className="sticky left-0 z-20 bg-white dark:bg-gray-900 group-hover:bg-gray-50 dark:group-hover:bg-gray-800 border-r border-gray-100 dark:border-gray-800 px-2 py-2 whitespace-nowrap transition-colors"
+                                    style={{ minWidth: W_CLASIF, width: W_CLASIF }}>
+                                    <ClasifSelect
+                                        cat={cat}
+                                        clasificaciones={clasificaciones}
+                                        savedClasif={savedClasif}
+                                        onChange={handleClasifChange}
+                                    />
+                                </td>
+                                <td className="sticky z-20 bg-white dark:bg-gray-900 group-hover:bg-gray-50 dark:group-hover:bg-gray-800 border-r border-gray-100 dark:border-gray-800 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap transition-colors"
+                                    style={{ left: W_CLASIF, minWidth: W_DETAIL, width: W_DETAIL, paddingLeft: 24 }}>
                                     {cat.name}
                                 </td>
                                 {months.map(m => (
@@ -420,19 +487,24 @@ export function Flujo() {
 
                         {incomeCategories.length === 0 && (
                             <tr>
-                                <td colSpan={13} className="px-4 py-3 text-xs text-gray-300 dark:text-gray-600 text-center">
-                                    Sin categorías de ingreso — agregar desde "Categorías"
+                                <td colSpan={totalCols} className="px-4 py-3 text-xs text-gray-300 dark:text-gray-600 text-center">
+                                    Sin conceptos de ingreso — agregar desde "Conceptos"
                                 </td>
                             </tr>
                         )}
 
                         {/* Separator */}
-                        <tr><td colSpan={13} className="p-0 h-px bg-gray-200 dark:bg-gray-700" /></tr>
+                        <tr><td colSpan={totalCols} className="p-0 h-px bg-gray-200 dark:bg-gray-700" /></tr>
 
                         {/* ── EXPENSE section ── */}
-                        {/* Total Egresos row */}
                         <tr className="border-b border-gray-200 dark:border-gray-700 bg-red-50/30 dark:bg-red-900/10">
-                            <td className="sticky left-0 z-10 bg-red-50/60 dark:bg-red-900/20 border-r border-gray-200 dark:border-gray-700 px-4 py-2.5 text-xs font-bold text-red-800 dark:text-red-300 uppercase tracking-wider whitespace-nowrap">
+                            {/* Sticky cells use solid bg */}
+                            <td className="sticky left-0 z-20 bg-red-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 px-3 py-2.5 text-xs text-gray-400 whitespace-nowrap text-center"
+                                style={{ minWidth: W_CLASIF, width: W_CLASIF }}>
+                                —
+                            </td>
+                            <td className="sticky z-20 bg-red-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 px-4 py-2.5 text-xs font-bold text-red-800 dark:text-red-300 uppercase tracking-wider whitespace-nowrap"
+                                style={{ left: W_CLASIF, minWidth: W_DETAIL, width: W_DETAIL }}>
                                 Total Egresos
                             </td>
                             {months.map(m => {
@@ -451,8 +523,12 @@ export function Flujo() {
 
                         {/* Tarjetas de crédito — read-only */}
                         <tr className="group border-b border-gray-100 dark:border-gray-800">
-                            <td className="sticky left-0 z-10 bg-white dark:bg-gray-900 group-hover:bg-gray-50 dark:group-hover:bg-gray-800 border-r border-gray-100 dark:border-gray-800 px-4 py-2 text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap transition-colors"
-                                style={{ paddingLeft: 24 }}>
+                            <td className="sticky left-0 z-20 bg-white dark:bg-gray-900 group-hover:bg-gray-50 dark:group-hover:bg-gray-800 border-r border-gray-100 dark:border-gray-800 px-3 py-2 text-xs text-gray-400 whitespace-nowrap text-center transition-colors"
+                                style={{ minWidth: W_CLASIF, width: W_CLASIF }}>
+                                —
+                            </td>
+                            <td className="sticky z-20 bg-white dark:bg-gray-900 group-hover:bg-gray-50 dark:group-hover:bg-gray-800 border-r border-gray-100 dark:border-gray-800 px-4 py-2 text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap transition-colors"
+                                style={{ left: W_CLASIF, minWidth: W_DETAIL, width: W_DETAIL, paddingLeft: 24 }}>
                                 💳 Tarjetas de crédito
                             </td>
                             {months.map(m => {
@@ -481,8 +557,17 @@ export function Flujo() {
                         {/* Expense category rows */}
                         {expenseCategories.map(cat => (
                             <tr key={cat.id} className="group border-b border-gray-100 dark:border-gray-800 last:border-0">
-                                <td className="sticky left-0 z-10 bg-white dark:bg-gray-900 group-hover:bg-gray-50 dark:group-hover:bg-gray-800 border-r border-gray-100 dark:border-gray-800 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap transition-colors"
-                                    style={{ paddingLeft: 24 }}>
+                                <td className="sticky left-0 z-20 bg-white dark:bg-gray-900 group-hover:bg-gray-50 dark:group-hover:bg-gray-800 border-r border-gray-100 dark:border-gray-800 px-2 py-2 whitespace-nowrap transition-colors"
+                                    style={{ minWidth: W_CLASIF, width: W_CLASIF }}>
+                                    <ClasifSelect
+                                        cat={cat}
+                                        clasificaciones={clasificaciones}
+                                        savedClasif={savedClasif}
+                                        onChange={handleClasifChange}
+                                    />
+                                </td>
+                                <td className="sticky z-20 bg-white dark:bg-gray-900 group-hover:bg-gray-50 dark:group-hover:bg-gray-800 border-r border-gray-100 dark:border-gray-800 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap transition-colors"
+                                    style={{ left: W_CLASIF, minWidth: W_DETAIL, width: W_DETAIL, paddingLeft: 24 }}>
                                     {cat.name}
                                 </td>
                                 {months.map(m => (
@@ -500,8 +585,8 @@ export function Flujo() {
 
                         {expenseCategories.length === 0 && (
                             <tr>
-                                <td colSpan={13} className="px-4 py-3 text-xs text-gray-300 dark:text-gray-600 text-center">
-                                    Sin categorías de egreso — agregar desde "Categorías"
+                                <td colSpan={totalCols} className="px-4 py-3 text-xs text-gray-300 dark:text-gray-600 text-center">
+                                    Sin conceptos de egreso — agregar desde "Conceptos"
                                 </td>
                             </tr>
                         )}

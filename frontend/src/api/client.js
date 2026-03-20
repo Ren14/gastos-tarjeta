@@ -108,6 +108,13 @@ export const api = {
     },
 
     // Cashflow
+    // Flujo clasificaciones
+    getClasificaciones: () => request('/flujo/clasificaciones'),
+    createClasificacion: (data) => request('/flujo/clasificaciones', { method: 'POST', body: JSON.stringify(data) }),
+    updateClasificacion: (id, data) => request(`/flujo/clasificaciones/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    updateCategoryClasificacion: (categoryId, clasificacionId) =>
+        request(`/cashflow/categories/${categoryId}/clasificacion`, { method: 'PUT', body: JSON.stringify({ clasificacion_id: clasificacionId }) }),
+
     getCashflowCategories: () => request('/cashflow/categories'),
     createCashflowCategory: (data) => request('/cashflow/categories', { method: 'POST', body: JSON.stringify(data) }),
     updateCashflowCategory: (id, data) => request(`/cashflow/categories/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
@@ -115,6 +122,11 @@ export const api = {
     saveCashflowEntry: (data) => request('/cashflow/entries', { method: 'POST', body: JSON.stringify(data) }),
     deleteCashflowEntry: (id) => request(`/cashflow/entries/${id}`, { method: 'DELETE' }),
     getCardTotals: (year) => request(`/cashflow/card-totals?year=${year}`),
+
+    // Dashboards
+    getCardSpendingDashboard: (year) => request(`/dashboards/card-spending?year=${year}`),
+    getCashflowDashboard: (year) => request(`/dashboards/cashflow?year=${year}`),
+    getSavingsDashboard: (year) => request(`/dashboards/savings?year=${year}`),
 
     // Splits
     getSplits: () => request('/splits'),

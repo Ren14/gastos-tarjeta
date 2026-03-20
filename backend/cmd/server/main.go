@@ -72,10 +72,16 @@ func main() {
 
 		r.Put("/expenses/{id}", handlers.UpdateExpense)
 
+		// Flujo clasificaciones
+		r.Get("/flujo/clasificaciones", handlers.GetClasificaciones)
+		r.Post("/flujo/clasificaciones", handlers.CreateClasificacion)
+		r.Put("/flujo/clasificaciones/{id}", handlers.UpdateClasificacion)
+
 		// Cashflow
 		r.Get("/cashflow/categories", handlers.GetCashflowCategories)
 		r.Post("/cashflow/categories", handlers.CreateCashflowCategory)
 		r.Put("/cashflow/categories/{id}", handlers.UpdateCashflowCategory)
+		r.Put("/cashflow/categories/{id}/clasificacion", handlers.UpdateCategoryClasificacion)
 		r.Get("/cashflow/entries", handlers.GetCashflowEntries)
 		r.Post("/cashflow/entries", handlers.SaveCashflowEntry)
 		r.Delete("/cashflow/entries/{id}", handlers.DeleteCashflowEntry)
@@ -93,6 +99,11 @@ func main() {
 		r.Delete("/splits/{id}/participants/{pid}", handlers.RemoveSplitParticipant)
 		r.Post("/splits/{id}/entries", handlers.SaveSplitEntry)
 		r.Get("/splits/{id}/matrix", handlers.GetSplitMatrix)
+
+		// Dashboards
+		r.Get("/dashboards/card-spending", handlers.GetCardSpending)
+		r.Get("/dashboards/cashflow", handlers.GetCashflowDashboard)
+		r.Get("/dashboards/savings", handlers.GetSavingsDashboard)
 
 		// Admin
 		r.Post("/admin/export-db", handlers.ExportDB)
