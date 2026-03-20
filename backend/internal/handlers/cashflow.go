@@ -90,6 +90,39 @@ func CreateCashflowCategory(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(c)
 }
 
+func ReorderCategories(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Orders []struct {
+			ID        int `json:"id"`
+			SortOrder int `json:"sort_order"`
+		} `json:"orders"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	tx, err := db.Pool.Begin(r.Context())
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	defer tx.Rollback(r.Context())
+	for _, o := range req.Orders {
+		if _, err := tx.Exec(r.Context(),
+			"UPDATE cashflow_categories SET sort_order = $1 WHERE id = $2",
+			o.SortOrder, o.ID,
+		); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+	}
+	if err := tx.Commit(r.Context()); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
+}
+
 func UpdateCashflowCategory(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(chi.URLParam(r, "id"))
 	if err != nil {

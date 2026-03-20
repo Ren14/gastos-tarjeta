@@ -81,6 +81,7 @@ func main() {
 		// Cashflow
 		r.Get("/cashflow/categories", handlers.GetCashflowCategories)
 		r.Post("/cashflow/categories", handlers.CreateCashflowCategory)
+		r.Put("/cashflow/categories/reorder", handlers.ReorderCategories)
 		r.Put("/cashflow/categories/{id}", handlers.UpdateCashflowCategory)
 		r.Put("/cashflow/categories/{id}/clasificacion", handlers.UpdateCategoryClasificacion)
 		r.Get("/cashflow/entries", handlers.GetCashflowEntries)

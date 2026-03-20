@@ -1,5 +1,10 @@
 import { useState, useEffect, useMemo, useRef } from 'react'
 import { api } from '../api/client'
+import {
+    DndContext, DragOverlay, closestCenter,
+    PointerSensor, useSensor, useSensors,
+} from '@dnd-kit/core'
+import { SortableContext, useSortable, verticalListSortingStrategy, arrayMove } from '@dnd-kit/sortable'
 
 const MONTHS_SHORT = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']
 const W_CLASIF          = 140
@@ -407,6 +412,50 @@ function EditableCell({ value, color, onSave, isPast, isCurrent }) {
     )
 }
 
+// ── Sortable category row ──────────────────────────────────────────────────────
+
+function SortableCategoryRow({ cat, months, entryMap, handleSave, isPast, isCurrent,
+    clasificaciones, savedClasif, handleClasifChange, clasifW, clasifCollapsed }) {
+    const { attributes, listeners, setNodeRef, isDragging } = useSortable({
+        id: cat.id,
+        animateLayoutChanges: () => false,
+    })
+
+    return (
+        <tr ref={setNodeRef}
+            className={`group border-b border-gray-100 dark:border-gray-800 last:border-0 ${isDragging ? 'opacity-0' : ''}`}>
+            <td className="sticky left-0 z-20 bg-white dark:bg-gray-900 group-hover:bg-gray-50 dark:group-hover:bg-gray-800 border-r border-gray-100 dark:border-gray-800 px-2 py-2 overflow-hidden"
+                style={{ minWidth: clasifW, width: clasifW, transition: 'width 0.25s ease, min-width 0.25s ease' }}>
+                {!clasifCollapsed && (
+                    <ClasifSelect cat={cat} clasificaciones={clasificaciones}
+                        savedClasif={savedClasif} onChange={handleClasifChange} />
+                )}
+            </td>
+            <td className="sticky z-20 bg-white dark:bg-gray-900 group-hover:bg-gray-50 dark:group-hover:bg-gray-800 border-r border-gray-100 dark:border-gray-800 py-2 text-sm text-gray-700 dark:text-gray-300 overflow-hidden transition-colors"
+                style={{ left: clasifW, minWidth: W_DETAIL, width: W_DETAIL, paddingLeft: 4, paddingRight: 4, transition: 'left 0.25s ease' }}>
+                <div className="flex items-center gap-0.5 min-w-0">
+                    <span {...listeners} {...attributes}
+                        className="flex-shrink-0 text-gray-200 dark:text-gray-700 hover:text-gray-400 dark:hover:text-gray-500 cursor-grab active:cursor-grabbing select-none opacity-0 group-hover:opacity-100 transition-opacity leading-none px-0.5"
+                        title="Reordenar">
+                        ⠿
+                    </span>
+                    <div title={cat.name} className="flex-1 min-w-0"
+                        style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {cat.name}
+                    </div>
+                </div>
+            </td>
+            {months.map(m => (
+                <EditableCell key={m}
+                    value={entryMap[cat.id]?.[m]?.amount ?? 0}
+                    color={entryMap[cat.id]?.[m]?.color ?? null}
+                    onSave={(amount, color) => handleSave(cat.id, m, amount, color)}
+                    isPast={isPast(m)} isCurrent={isCurrent(m)} />
+            ))}
+        </tr>
+    )
+}
+
 // ── Sticky cell helpers ────────────────────────────────────────────────────────
 // z-30 = thead sticky, z-20 = tbody sticky (ensures header stays above data on both axes)
 // Backgrounds must be fully opaque — opacity variants bleed through on horizontal scroll.
@@ -429,6 +478,9 @@ export function Flujo() {
     const [savedClasif,     setSavedClasif]     = useState({})
     const [clasifCollapsed, setClasifCollapsed] = useState(false)
     const [showClasifModal, setShowClasifModal] = useState(false)
+    const [dragActiveId,    setDragActiveId]    = useState(null)
+
+    const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }))
 
     const clasifW = clasifCollapsed ? W_CLASIF_COLLAPSED : W_CLASIF
 
@@ -475,6 +527,32 @@ export function Flujo() {
         ))
         setSavedClasif(prev => ({ ...prev, [categoryId]: true }))
         setTimeout(() => setSavedClasif(prev => ({ ...prev, [categoryId]: false })), 1500)
+    }
+
+    function handleDragEnd({ active, over }) {
+        setDragActiveId(null)
+        if (!over || active.id === over.id) return
+
+        const incomeIds  = new Set(incomeCategories.map(c => c.id))
+        const expenseIds = new Set(expenseCategories.map(c => c.id))
+        const activeInIncome  = incomeIds.has(active.id)
+        const activeInExpense = expenseIds.has(active.id)
+        // Only reorder within same section
+        if (activeInIncome && !incomeIds.has(over.id)) return
+        if (activeInExpense && !expenseIds.has(over.id)) return
+
+        const section    = activeInIncome ? incomeCategories : expenseCategories
+        const other      = activeInIncome ? expenseCategories : incomeCategories
+        const oldIdx     = section.findIndex(c => c.id === active.id)
+        const newIdx     = section.findIndex(c => c.id === over.id)
+        if (oldIdx === -1 || newIdx === -1) return
+
+        const reordered  = arrayMove(section, oldIdx, newIdx).map((c, i) => ({ ...c, sort_order: i + 1 }))
+        const prevCats   = [...categories]
+
+        setCategories(activeInIncome ? [...reordered, ...other] : [...other, ...reordered])
+        api.reorderCashflowCategories({ orders: reordered.map(c => ({ id: c.id, sort_order: c.sort_order })) })
+            .catch(() => setCategories(prevCats))
     }
 
     const entryMap = useMemo(() => {
@@ -561,6 +639,10 @@ export function Flujo() {
             </div>
 
             {/* Matrix */}
+            <DndContext sensors={sensors} collisionDetection={closestCenter}
+                onDragStart={({ active }) => setDragActiveId(active.id)}
+                onDragEnd={handleDragEnd}
+                onDragCancel={() => setDragActiveId(null)}>
             <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
                 <table className="border-collapse" style={{ width: 'max-content', minWidth: '100%', tableLayout: 'fixed' }}>
                     <thead>
@@ -657,35 +739,16 @@ export function Flujo() {
                         </tr>
 
                         {/* Income category rows */}
-                        {incomeCategories.map(cat => (
-                            <tr key={cat.id} className="group border-b border-gray-100 dark:border-gray-800 last:border-0">
-                                <td className="sticky left-0 z-20 bg-white dark:bg-gray-900 group-hover:bg-gray-50 dark:group-hover:bg-gray-800 border-r border-gray-100 dark:border-gray-800 px-2 py-2 overflow-hidden"
-                                    style={{ minWidth: clasifW, width: clasifW, transition: 'width 0.25s ease, min-width 0.25s ease' }}>
-                                    {!clasifCollapsed && (
-                                        <ClasifSelect
-                                            cat={cat}
-                                            clasificaciones={clasificaciones}
-                                            savedClasif={savedClasif}
-                                            onChange={handleClasifChange}
-                                        />
-                                    )}
-                                </td>
-                                <td className="sticky z-20 bg-white dark:bg-gray-900 group-hover:bg-gray-50 dark:group-hover:bg-gray-800 border-r border-gray-100 dark:border-gray-800 py-2 text-sm text-gray-700 dark:text-gray-300 overflow-hidden transition-colors"
-                                    style={{ left: clasifW, minWidth: W_DETAIL, width: W_DETAIL, paddingLeft: 24, paddingRight: 8, transition: 'left 0.25s ease' }}>
-                                    <div title={cat.name} style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{cat.name}</div>
-                                </td>
-                                {months.map(m => (
-                                    <EditableCell
-                                        key={m}
-                                        value={entryMap[cat.id]?.[m]?.amount ?? 0}
-                                        color={entryMap[cat.id]?.[m]?.color ?? null}
-                                        onSave={(amount, color) => handleSave(cat.id, m, amount, color)}
-                                        isPast={isPast(m)}
-                                        isCurrent={isCurrent(m)}
-                                    />
-                                ))}
-                            </tr>
-                        ))}
+                        <SortableContext items={incomeCategories.map(c => c.id)} strategy={verticalListSortingStrategy}>
+                            {incomeCategories.map(cat => (
+                                <SortableCategoryRow key={cat.id} cat={cat} months={months}
+                                    entryMap={entryMap} handleSave={handleSave}
+                                    isPast={isPast} isCurrent={isCurrent}
+                                    clasificaciones={clasificaciones} savedClasif={savedClasif}
+                                    handleClasifChange={handleClasifChange}
+                                    clasifW={clasifW} clasifCollapsed={clasifCollapsed} />
+                            ))}
+                        </SortableContext>
 
                         {incomeCategories.length === 0 && (
                             <tr>
@@ -757,35 +820,16 @@ export function Flujo() {
                         </tr>
 
                         {/* Expense category rows */}
-                        {expenseCategories.map(cat => (
-                            <tr key={cat.id} className="group border-b border-gray-100 dark:border-gray-800 last:border-0">
-                                <td className="sticky left-0 z-20 bg-white dark:bg-gray-900 group-hover:bg-gray-50 dark:group-hover:bg-gray-800 border-r border-gray-100 dark:border-gray-800 px-2 py-2 overflow-hidden"
-                                    style={{ minWidth: clasifW, width: clasifW, transition: 'width 0.25s ease, min-width 0.25s ease' }}>
-                                    {!clasifCollapsed && (
-                                        <ClasifSelect
-                                            cat={cat}
-                                            clasificaciones={clasificaciones}
-                                            savedClasif={savedClasif}
-                                            onChange={handleClasifChange}
-                                        />
-                                    )}
-                                </td>
-                                <td className="sticky z-20 bg-white dark:bg-gray-900 group-hover:bg-gray-50 dark:group-hover:bg-gray-800 border-r border-gray-100 dark:border-gray-800 py-2 text-sm text-gray-700 dark:text-gray-300 overflow-hidden transition-colors"
-                                    style={{ left: clasifW, minWidth: W_DETAIL, width: W_DETAIL, paddingLeft: 24, paddingRight: 8, transition: 'left 0.25s ease' }}>
-                                    <div title={cat.name} style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{cat.name}</div>
-                                </td>
-                                {months.map(m => (
-                                    <EditableCell
-                                        key={m}
-                                        value={entryMap[cat.id]?.[m]?.amount ?? 0}
-                                        color={entryMap[cat.id]?.[m]?.color ?? null}
-                                        onSave={(amount, color) => handleSave(cat.id, m, amount, color)}
-                                        isPast={isPast(m)}
-                                        isCurrent={isCurrent(m)}
-                                    />
-                                ))}
-                            </tr>
-                        ))}
+                        <SortableContext items={expenseCategories.map(c => c.id)} strategy={verticalListSortingStrategy}>
+                            {expenseCategories.map(cat => (
+                                <SortableCategoryRow key={cat.id} cat={cat} months={months}
+                                    entryMap={entryMap} handleSave={handleSave}
+                                    isPast={isPast} isCurrent={isCurrent}
+                                    clasificaciones={clasificaciones} savedClasif={savedClasif}
+                                    handleClasifChange={handleClasifChange}
+                                    clasifW={clasifW} clasifCollapsed={clasifCollapsed} />
+                            ))}
+                        </SortableContext>
 
                         {expenseCategories.length === 0 && (
                             <tr>
@@ -797,6 +841,14 @@ export function Flujo() {
                     </tbody>
                 </table>
             </div>
+            <DragOverlay dropAnimation={null}>
+                {dragActiveId ? (
+                    <div className="bg-white dark:bg-gray-800 shadow-lg rounded-lg px-3 py-1.5 text-sm text-gray-700 dark:text-gray-200 border border-blue-300 dark:border-blue-600 cursor-grabbing select-none max-w-[200px] overflow-hidden text-ellipsis whitespace-nowrap">
+                        ⠿ {categories.find(c => c.id === dragActiveId)?.name}
+                    </div>
+                ) : null}
+            </DragOverlay>
+            </DndContext>
 
             {/* Legend */}
             <div className="flex items-center gap-4 mt-3 text-xs text-gray-400 dark:text-gray-500">

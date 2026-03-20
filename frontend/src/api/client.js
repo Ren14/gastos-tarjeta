@@ -119,6 +119,7 @@ export const api = {
     getCashflowCategories: () => request('/cashflow/categories'),
     createCashflowCategory: (data) => request('/cashflow/categories', { method: 'POST', body: JSON.stringify(data) }),
     updateCashflowCategory: (id, data) => request(`/cashflow/categories/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    reorderCashflowCategories: (data) => request('/cashflow/categories/reorder', { method: 'PUT', body: JSON.stringify(data) }),
     getCashflowEntries: (year) => request(`/cashflow/entries?year=${year}`),
     saveCashflowEntry: (data) => request('/cashflow/entries', { method: 'POST', body: JSON.stringify(data) }),
     deleteCashflowEntry: (id) => request(`/cashflow/entries/${id}`, { method: 'DELETE' }),
