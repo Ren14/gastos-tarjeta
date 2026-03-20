@@ -5,6 +5,7 @@ export function Login() {
     const { login } = useAuth()
     const [username, setUsername] = useState('')
     const [password, setPassword] = useState('')
+    const [remember, setRemember] = useState(true)
     const [error,    setError]    = useState(null)
     const [loading,  setLoading]  = useState(false)
 
@@ -13,7 +14,7 @@ export function Login() {
         setError(null)
         setLoading(true)
         try {
-            await login(username, password)
+            await login(username, password, remember)
         } catch (err) {
             setError(err.message || 'Error al iniciar sesión')
         } finally {
@@ -58,6 +59,16 @@ export function Login() {
                             className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent dark:bg-gray-700 dark:text-gray-100 dark:border-gray-600 dark:focus:ring-gray-400"
                         />
                     </div>
+
+                    <label className="flex items-center gap-2.5 cursor-pointer select-none">
+                        <input
+                            type="checkbox"
+                            checked={remember}
+                            onChange={e => setRemember(e.target.checked)}
+                            className="w-4 h-4 rounded accent-gray-900"
+                        />
+                        <span className="text-sm text-gray-600 dark:text-gray-400">Mantener sesión por 7 días</span>
+                    </label>
 
                     {error && (
                         <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-700">
