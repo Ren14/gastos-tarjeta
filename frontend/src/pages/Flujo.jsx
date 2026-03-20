@@ -2,8 +2,9 @@ import { useState, useEffect, useMemo, useRef } from 'react'
 import { api } from '../api/client'
 
 const MONTHS_SHORT = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']
-const W_CLASIF = 140
-const W_DETAIL = 200
+const W_CLASIF          = 140
+const W_CLASIF_COLLAPSED = 20
+const W_DETAIL = 140
 const W_MONTH  = 100
 
 const COLOR_OPTIONS = [
@@ -254,6 +255,9 @@ export function Flujo() {
     const [loading,         setLoading]         = useState(true)
     const [hidePast,        setHidePast]        = useState(true)
     const [savedClasif,     setSavedClasif]     = useState({})
+    const [clasifCollapsed, setClasifCollapsed] = useState(false)
+
+    const clasifW = clasifCollapsed ? W_CLASIF_COLLAPSED : W_CLASIF
 
     const isCurrent = (m) => m === currentMonth && selectedYear === currentYear
     const isPast    = (m) => selectedYear < currentYear || (selectedYear === currentYear && m < currentMonth)
@@ -383,12 +387,29 @@ export function Flujo() {
                     <thead>
                         <tr className="border-b-2 border-gray-200 dark:border-gray-700">
                             {/* ── thead sticky cells: z-30 so they sit above all tbody sticky cells (z-20) ── */}
-                            <th className="sticky left-0 z-30 bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 text-left px-3 py-2.5 text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wide whitespace-nowrap"
-                                style={{ minWidth: W_CLASIF, width: W_CLASIF }}>
-                                Clasificación
+                            <th className="sticky left-0 z-30 bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 text-left py-2.5 text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wide overflow-hidden"
+                                style={{ minWidth: clasifW, width: clasifW, transition: 'width 0.25s ease, min-width 0.25s ease' }}>
+                                {clasifCollapsed ? (
+                                    <button
+                                        onClick={() => setClasifCollapsed(false)}
+                                        title="Expandir clasificación"
+                                        className="w-full h-full flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                                        ›
+                                    </button>
+                                ) : (
+                                    <div className="flex items-center justify-between px-3">
+                                        <span>Clasificación</span>
+                                        <button
+                                            onClick={() => setClasifCollapsed(true)}
+                                            title="Colapsar clasificación"
+                                            className="text-gray-300 dark:text-gray-600 hover:text-gray-500 dark:hover:text-gray-400 ml-1 leading-none">
+                                            ‹
+                                        </button>
+                                    </div>
+                                )}
                             </th>
-                            <th className="sticky z-30 bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 text-left px-4 py-2.5 text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wide whitespace-nowrap"
-                                style={{ left: W_CLASIF, minWidth: W_DETAIL, width: W_DETAIL }}>
+                            <th className="sticky z-30 bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 text-left px-4 py-2.5 text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wide whitespace-nowrap overflow-hidden"
+                                style={{ left: clasifW, minWidth: W_DETAIL, width: W_DETAIL, transition: 'left 0.25s ease' }}>
                                 Concepto
                             </th>
                             {months.map(m => (
@@ -406,13 +427,13 @@ export function Flujo() {
 
                         {/* Disponible row */}
                         <tr className="border-b-2 border-gray-300">
-                            <td className="sticky left-0 z-20 bg-gray-900 border-r border-gray-700 px-3 py-3 text-xs text-gray-600 whitespace-nowrap text-center"
-                                style={{ minWidth: W_CLASIF, width: W_CLASIF }}>
+                            <td className="sticky left-0 z-20 bg-gray-900 border-r border-gray-700 px-3 py-3 text-xs text-gray-600 whitespace-nowrap text-center overflow-hidden"
+                                style={{ minWidth: clasifW, width: clasifW, transition: 'width 0.25s ease, min-width 0.25s ease' }}>
                                 —
                             </td>
-                            <td className="sticky z-20 bg-gray-900 border-r border-gray-700 px-4 py-3 text-xs font-bold text-white uppercase tracking-wider whitespace-nowrap"
-                                style={{ left: W_CLASIF, minWidth: W_DETAIL, width: W_DETAIL }}>
-                                Disponible
+                            <td className="sticky z-20 bg-gray-900 border-r border-gray-700 px-4 py-3 text-xs font-bold text-white uppercase tracking-wider overflow-hidden"
+                                style={{ left: clasifW, minWidth: W_DETAIL, width: W_DETAIL, transition: 'left 0.25s ease' }}>
+                                <div title="Disponible" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Disponible</div>
                             </td>
                             {months.map(m => {
                                 const val      = disponible[m - 1]
@@ -434,13 +455,13 @@ export function Flujo() {
                         {/* ── INCOME section ── */}
                         <tr className="border-b border-gray-200 dark:border-gray-700 bg-green-50/40 dark:bg-green-900/10">
                             {/* Sticky cells use solid bg — opaque so scrolling content doesn't show through */}
-                            <td className="sticky left-0 z-20 bg-green-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 px-3 py-2.5 text-xs text-gray-400 whitespace-nowrap text-center"
-                                style={{ minWidth: W_CLASIF, width: W_CLASIF }}>
+                            <td className="sticky left-0 z-20 bg-green-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 px-3 py-2.5 text-xs text-gray-400 whitespace-nowrap text-center overflow-hidden"
+                                style={{ minWidth: clasifW, width: clasifW, transition: 'width 0.25s ease, min-width 0.25s ease' }}>
                                 —
                             </td>
-                            <td className="sticky z-20 bg-green-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 px-4 py-2.5 text-xs font-bold text-green-800 dark:text-green-300 uppercase tracking-wider whitespace-nowrap"
-                                style={{ left: W_CLASIF, minWidth: W_DETAIL, width: W_DETAIL }}>
-                                Total Ingresos
+                            <td className="sticky z-20 bg-green-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 px-4 py-2.5 text-xs font-bold text-green-800 dark:text-green-300 uppercase tracking-wider overflow-hidden"
+                                style={{ left: clasifW, minWidth: W_DETAIL, width: W_DETAIL, transition: 'left 0.25s ease' }}>
+                                <div title="Total Ingresos" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Total Ingresos</div>
                             </td>
                             {months.map(m => {
                                 const total = incomeTotals[m - 1]
@@ -459,18 +480,20 @@ export function Flujo() {
                         {/* Income category rows */}
                         {incomeCategories.map(cat => (
                             <tr key={cat.id} className="group border-b border-gray-100 dark:border-gray-800 last:border-0">
-                                <td className="sticky left-0 z-20 bg-white dark:bg-gray-900 group-hover:bg-gray-50 dark:group-hover:bg-gray-800 border-r border-gray-100 dark:border-gray-800 px-2 py-2 whitespace-nowrap transition-colors"
-                                    style={{ minWidth: W_CLASIF, width: W_CLASIF }}>
-                                    <ClasifSelect
-                                        cat={cat}
-                                        clasificaciones={clasificaciones}
-                                        savedClasif={savedClasif}
-                                        onChange={handleClasifChange}
-                                    />
+                                <td className="sticky left-0 z-20 bg-white dark:bg-gray-900 group-hover:bg-gray-50 dark:group-hover:bg-gray-800 border-r border-gray-100 dark:border-gray-800 px-2 py-2 overflow-hidden"
+                                    style={{ minWidth: clasifW, width: clasifW, transition: 'width 0.25s ease, min-width 0.25s ease' }}>
+                                    {!clasifCollapsed && (
+                                        <ClasifSelect
+                                            cat={cat}
+                                            clasificaciones={clasificaciones}
+                                            savedClasif={savedClasif}
+                                            onChange={handleClasifChange}
+                                        />
+                                    )}
                                 </td>
-                                <td className="sticky z-20 bg-white dark:bg-gray-900 group-hover:bg-gray-50 dark:group-hover:bg-gray-800 border-r border-gray-100 dark:border-gray-800 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap transition-colors"
-                                    style={{ left: W_CLASIF, minWidth: W_DETAIL, width: W_DETAIL, paddingLeft: 24 }}>
-                                    {cat.name}
+                                <td className="sticky z-20 bg-white dark:bg-gray-900 group-hover:bg-gray-50 dark:group-hover:bg-gray-800 border-r border-gray-100 dark:border-gray-800 py-2 text-sm text-gray-700 dark:text-gray-300 overflow-hidden transition-colors"
+                                    style={{ left: clasifW, minWidth: W_DETAIL, width: W_DETAIL, paddingLeft: 24, paddingRight: 8, transition: 'left 0.25s ease' }}>
+                                    <div title={cat.name} style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{cat.name}</div>
                                 </td>
                                 {months.map(m => (
                                     <EditableCell
@@ -499,13 +522,13 @@ export function Flujo() {
                         {/* ── EXPENSE section ── */}
                         <tr className="border-b border-gray-200 dark:border-gray-700 bg-red-50/30 dark:bg-red-900/10">
                             {/* Sticky cells use solid bg */}
-                            <td className="sticky left-0 z-20 bg-red-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 px-3 py-2.5 text-xs text-gray-400 whitespace-nowrap text-center"
-                                style={{ minWidth: W_CLASIF, width: W_CLASIF }}>
+                            <td className="sticky left-0 z-20 bg-red-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 px-3 py-2.5 text-xs text-gray-400 whitespace-nowrap text-center overflow-hidden"
+                                style={{ minWidth: clasifW, width: clasifW, transition: 'width 0.25s ease, min-width 0.25s ease' }}>
                                 —
                             </td>
-                            <td className="sticky z-20 bg-red-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 px-4 py-2.5 text-xs font-bold text-red-800 dark:text-red-300 uppercase tracking-wider whitespace-nowrap"
-                                style={{ left: W_CLASIF, minWidth: W_DETAIL, width: W_DETAIL }}>
-                                Total Egresos
+                            <td className="sticky z-20 bg-red-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 px-4 py-2.5 text-xs font-bold text-red-800 dark:text-red-300 uppercase tracking-wider overflow-hidden"
+                                style={{ left: clasifW, minWidth: W_DETAIL, width: W_DETAIL, transition: 'left 0.25s ease' }}>
+                                <div title="Total Egresos" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>Total Egresos</div>
                             </td>
                             {months.map(m => {
                                 const total = expenseTotals[m - 1]
@@ -523,13 +546,13 @@ export function Flujo() {
 
                         {/* Tarjetas de crédito — read-only */}
                         <tr className="group border-b border-gray-100 dark:border-gray-800">
-                            <td className="sticky left-0 z-20 bg-white dark:bg-gray-900 group-hover:bg-gray-50 dark:group-hover:bg-gray-800 border-r border-gray-100 dark:border-gray-800 px-3 py-2 text-xs text-gray-400 whitespace-nowrap text-center transition-colors"
-                                style={{ minWidth: W_CLASIF, width: W_CLASIF }}>
+                            <td className="sticky left-0 z-20 bg-white dark:bg-gray-900 group-hover:bg-gray-50 dark:group-hover:bg-gray-800 border-r border-gray-100 dark:border-gray-800 px-3 py-2 text-xs text-gray-400 whitespace-nowrap text-center overflow-hidden transition-colors"
+                                style={{ minWidth: clasifW, width: clasifW, transition: 'width 0.25s ease, min-width 0.25s ease' }}>
                                 —
                             </td>
-                            <td className="sticky z-20 bg-white dark:bg-gray-900 group-hover:bg-gray-50 dark:group-hover:bg-gray-800 border-r border-gray-100 dark:border-gray-800 px-4 py-2 text-sm text-gray-600 dark:text-gray-400 whitespace-nowrap transition-colors"
-                                style={{ left: W_CLASIF, minWidth: W_DETAIL, width: W_DETAIL, paddingLeft: 24 }}>
-                                💳 Tarjetas de crédito
+                            <td className="sticky z-20 bg-white dark:bg-gray-900 group-hover:bg-gray-50 dark:group-hover:bg-gray-800 border-r border-gray-100 dark:border-gray-800 py-2 text-sm text-gray-600 dark:text-gray-400 overflow-hidden transition-colors"
+                                style={{ left: clasifW, minWidth: W_DETAIL, width: W_DETAIL, paddingLeft: 24, paddingRight: 8, transition: 'left 0.25s ease' }}>
+                                <div title="Tarjetas de crédito" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>💳 Tarjetas de crédito</div>
                             </td>
                             {months.map(m => {
                                 const entry   = cardTotalByMonth[m]
@@ -557,18 +580,20 @@ export function Flujo() {
                         {/* Expense category rows */}
                         {expenseCategories.map(cat => (
                             <tr key={cat.id} className="group border-b border-gray-100 dark:border-gray-800 last:border-0">
-                                <td className="sticky left-0 z-20 bg-white dark:bg-gray-900 group-hover:bg-gray-50 dark:group-hover:bg-gray-800 border-r border-gray-100 dark:border-gray-800 px-2 py-2 whitespace-nowrap transition-colors"
-                                    style={{ minWidth: W_CLASIF, width: W_CLASIF }}>
-                                    <ClasifSelect
-                                        cat={cat}
-                                        clasificaciones={clasificaciones}
-                                        savedClasif={savedClasif}
-                                        onChange={handleClasifChange}
-                                    />
+                                <td className="sticky left-0 z-20 bg-white dark:bg-gray-900 group-hover:bg-gray-50 dark:group-hover:bg-gray-800 border-r border-gray-100 dark:border-gray-800 px-2 py-2 overflow-hidden"
+                                    style={{ minWidth: clasifW, width: clasifW, transition: 'width 0.25s ease, min-width 0.25s ease' }}>
+                                    {!clasifCollapsed && (
+                                        <ClasifSelect
+                                            cat={cat}
+                                            clasificaciones={clasificaciones}
+                                            savedClasif={savedClasif}
+                                            onChange={handleClasifChange}
+                                        />
+                                    )}
                                 </td>
-                                <td className="sticky z-20 bg-white dark:bg-gray-900 group-hover:bg-gray-50 dark:group-hover:bg-gray-800 border-r border-gray-100 dark:border-gray-800 px-4 py-2 text-sm text-gray-700 dark:text-gray-300 whitespace-nowrap transition-colors"
-                                    style={{ left: W_CLASIF, minWidth: W_DETAIL, width: W_DETAIL, paddingLeft: 24 }}>
-                                    {cat.name}
+                                <td className="sticky z-20 bg-white dark:bg-gray-900 group-hover:bg-gray-50 dark:group-hover:bg-gray-800 border-r border-gray-100 dark:border-gray-800 py-2 text-sm text-gray-700 dark:text-gray-300 overflow-hidden transition-colors"
+                                    style={{ left: clasifW, minWidth: W_DETAIL, width: W_DETAIL, paddingLeft: 24, paddingRight: 8, transition: 'left 0.25s ease' }}>
+                                    <div title={cat.name} style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{cat.name}</div>
                                 </td>
                                 {months.map(m => (
                                     <EditableCell
