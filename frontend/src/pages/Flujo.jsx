@@ -383,7 +383,7 @@ export function Flujo() {
 
             {/* Matrix */}
             <div className="overflow-x-auto rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm">
-                <table className="border-collapse" style={{ width: 'max-content', minWidth: '100%' }}>
+                <table className="border-collapse" style={{ width: 'max-content', minWidth: '100%', tableLayout: 'fixed' }}>
                     <thead>
                         <tr className="border-b-2 border-gray-200 dark:border-gray-700">
                             {/* ── thead sticky cells: z-30 so they sit above all tbody sticky cells (z-20) ── */}
