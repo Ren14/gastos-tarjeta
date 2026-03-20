@@ -1,0 +1,1 @@
+ALTER TABLE todo_tasks DROP COLUMN IF EXISTS due_date;

@@ -20,6 +20,16 @@ type TodoTask struct {
 	Amount        float64    `json:"amount"`
 	ColorHex      string     `json:"color_hex"`
 	CompletedAt   *time.Time `json:"completed_at"`
+	DueDate       *string    `json:"due_date"` // "YYYY-MM-DD" or null
+}
+
+// scanDueDate converts a scanned *time.Time DATE into a *string ("YYYY-MM-DD").
+func scanDueDate(t *time.Time) *string {
+	if t == nil {
+		return nil
+	}
+	s := t.Format("2006-01-02")
+	return &s
 }
 
 func GetTodos(w http.ResponseWriter, r *http.Request) {
@@ -34,7 +44,7 @@ func GetTodos(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// ── 1. Card totals for this month (same logic as GetSummaryByCard) ─────────
+	// ── 1. Card totals for this month ──────────────────────────────────────────
 	type cardInfo struct {
 		ID       int
 		Name     string
@@ -119,7 +129,6 @@ func GetTodos(w http.ResponseWriter, r *http.Request) {
 	}
 	catClasifRows.Close()
 
-	// Build set of relevant category IDs
 	catToClasif := map[int]catClasif{}
 	for _, cc := range catClasifs {
 		catToClasif[cc.CatID] = cc
@@ -155,11 +164,14 @@ func GetTodos(w http.ResponseWriter, r *http.Request) {
 	entryRows.Close()
 
 	// ── 3. Load persisted todo_tasks for this month/year ───────────────────────
-	type persistedKey struct{ TaskType string; ReferenceID int }
+	type persistedKey struct {
+		TaskType    string
+		ReferenceID int
+	}
 	persisted := map[persistedKey]*TodoTask{}
 
 	dbRows, err := db.Pool.Query(r.Context(),
-		`SELECT id, task_type, reference_id, reference_name, amount, completed_at
+		`SELECT id, task_type, reference_id, reference_name, amount, completed_at, due_date
 		 FROM todo_tasks WHERE month = $1 AND year = $2`, month, year)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -170,10 +182,12 @@ func GetTodos(w http.ResponseWriter, r *http.Request) {
 	for dbRows.Next() {
 		var t TodoTask
 		var id int
-		dbRows.Scan(&id, &t.TaskType, &t.ReferenceID, &t.ReferenceName, &t.Amount, &t.CompletedAt)
+		var dueDateT *time.Time
+		dbRows.Scan(&id, &t.TaskType, &t.ReferenceID, &t.ReferenceName, &t.Amount, &t.CompletedAt, &dueDateT)
 		t.ID = &id
 		t.Month = month
 		t.Year = year
+		t.DueDate = scanDueDate(dueDateT)
 		persisted[persistedKey{t.TaskType, t.ReferenceID}] = &t
 	}
 	dbRows.Close()
@@ -197,6 +211,7 @@ func GetTodos(w http.ResponseWriter, r *http.Request) {
 		if p, ok := persisted[persistedKey{"card_payment", c.ID}]; ok {
 			task.ID = p.ID
 			task.CompletedAt = p.CompletedAt
+			task.DueDate = p.DueDate
 		}
 		cardTasks = append(cardTasks, task)
 	}
@@ -265,19 +280,22 @@ func CompleteTodo(w http.ResponseWriter, r *http.Request) {
 
 	var t TodoTask
 	var id int
+	var dueDateT *time.Time
+	// Note: due_date is preserved on complete (not overwritten)
 	err = db.Pool.QueryRow(r.Context(),
 		`INSERT INTO todo_tasks (month, year, task_type, reference_id, reference_name, amount, completed_at)
 		 VALUES ($1, $2, $3, $4, $5, $6, NOW())
 		 ON CONFLICT (month, year, task_type, reference_id) DO UPDATE
 		   SET completed_at = NOW(), reference_name = EXCLUDED.reference_name, amount = EXCLUDED.amount
-		 RETURNING id, month, year, task_type, reference_id, reference_name, amount, completed_at`,
+		 RETURNING id, month, year, task_type, reference_id, reference_name, amount, completed_at, due_date`,
 		req.Month, req.Year, req.TaskType, req.ReferenceID, req.ReferenceName, req.Amount,
-	).Scan(&id, &t.Month, &t.Year, &t.TaskType, &t.ReferenceID, &t.ReferenceName, &t.Amount, &t.CompletedAt)
+	).Scan(&id, &t.Month, &t.Year, &t.TaskType, &t.ReferenceID, &t.ReferenceName, &t.Amount, &t.CompletedAt, &dueDateT)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 	t.ID = &id
+	t.DueDate = scanDueDate(dueDateT)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
@@ -307,4 +325,43 @@ func UncompleteTodo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusNoContent)
+}
+
+func UpdateTodoDueDate(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Month         int     `json:"month"`
+		Year          int     `json:"year"`
+		TaskType      string  `json:"task_type"`
+		ReferenceID   int     `json:"reference_id"`
+		ReferenceName string  `json:"reference_name"`
+		Amount        float64 `json:"amount"`
+		DueDate       *string `json:"due_date"` // "YYYY-MM-DD" or null to clear
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	var t TodoTask
+	var id int
+	var dueDateT *time.Time
+	err := db.Pool.QueryRow(r.Context(),
+		`INSERT INTO todo_tasks (month, year, task_type, reference_id, reference_name, amount, due_date)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7)
+		 ON CONFLICT (month, year, task_type, reference_id) DO UPDATE
+		   SET due_date = EXCLUDED.due_date,
+		       reference_name = EXCLUDED.reference_name,
+		       amount = EXCLUDED.amount
+		 RETURNING id, month, year, task_type, reference_id, reference_name, amount, completed_at, due_date`,
+		req.Month, req.Year, req.TaskType, req.ReferenceID, req.ReferenceName, req.Amount, req.DueDate,
+	).Scan(&id, &t.Month, &t.Year, &t.TaskType, &t.ReferenceID, &t.ReferenceName, &t.Amount, &t.CompletedAt, &dueDateT)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	t.ID = &id
+	t.DueDate = scanDueDate(dueDateT)
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(t)
 }

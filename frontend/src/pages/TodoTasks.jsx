@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { api } from '../api/client'
 
 const MONTHS_ES = [
@@ -17,6 +17,36 @@ function fmtTs(dateStr) {
     })
 }
 
+function fmtDateShort(yyyy_mm_dd) {
+    // "2025-03-20" → "20/03"
+    const [, m, d] = yyyy_mm_dd.split('-')
+    return `${d}/${m}`
+}
+
+function todayStr() {
+    const now = new Date()
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+}
+
+function DueDateIndicator({ dueDate, done }) {
+    if (!dueDate) return (
+        <span className="text-xs text-gray-300 dark:text-gray-600 italic">Agregar vencimiento</span>
+    )
+    if (done) return (
+        <span className="text-xs text-gray-300 dark:text-gray-600">📅 {fmtDateShort(dueDate)}</span>
+    )
+    const today = todayStr()
+    if (dueDate < today) return (
+        <span className="text-xs text-red-500 dark:text-red-400 font-medium">🔴 Vencido {fmtDateShort(dueDate)}</span>
+    )
+    if (dueDate === today) return (
+        <span className="text-xs text-orange-500 dark:text-orange-400 font-medium">⚠️ Vence hoy</span>
+    )
+    return (
+        <span className="text-xs text-gray-400 dark:text-gray-500">📅 Vence {fmtDateShort(dueDate)}</span>
+    )
+}
+
 function ColorDot({ hex }) {
     if (!hex) return null
     return (
@@ -27,9 +57,12 @@ function ColorDot({ hex }) {
     )
 }
 
-function TaskRow({ task, onComplete, onUncomplete, completing }) {
+function TaskRow({ task, onComplete, onUncomplete, onDueDateChange, completing }) {
     const [confirmUncheck, setConfirmUncheck] = useState(false)
+    const [savedFlash,     setSavedFlash]     = useState(false)
+    const flashTimer = useRef(null)
     const done = !!task.completed_at
+    const isCard = task.task_type === 'card_payment'
 
     function handleCheck() {
         if (done) {
@@ -39,8 +72,17 @@ function TaskRow({ task, onComplete, onUncomplete, completing }) {
         }
     }
 
+    function handleDueDateChange(e) {
+        const val = e.target.value || null // empty string → null to clear
+        onDueDateChange(task, val)
+        // flash saved indicator
+        clearTimeout(flashTimer.current)
+        setSavedFlash(true)
+        flashTimer.current = setTimeout(() => setSavedFlash(false), 1500)
+    }
+
     return (
-        <div className={`flex items-start gap-3 px-4 py-3 rounded-xl transition-colors ${
+        <div className={`flex items-start gap-3 px-4 py-3 transition-colors ${
             done ? 'bg-green-50 dark:bg-green-900/20' : 'bg-white dark:bg-gray-800'
         }`}>
             {/* Checkbox */}
@@ -64,7 +106,7 @@ function TaskRow({ task, onComplete, onUncomplete, completing }) {
             {/* Content */}
             <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
-                    {task.task_type === 'card_payment' && <ColorDot hex={task.color_hex} />}
+                    {isCard && <ColorDot hex={task.color_hex} />}
                     <span className={`text-sm font-semibold ${
                         done
                             ? 'line-through text-gray-400 dark:text-gray-500'
@@ -73,12 +115,29 @@ function TaskRow({ task, onComplete, onUncomplete, completing }) {
                         {task.reference_name}
                     </span>
                 </div>
+
+                {/* Due date row — card payments only */}
+                {isCard && (
+                    <div className="flex items-center gap-2 mt-1">
+                        <DueDateIndicator dueDate={task.due_date} done={done} />
+                        <input
+                            type="date"
+                            value={task.due_date ?? ''}
+                            onChange={handleDueDateChange}
+                            className="text-xs border border-gray-200 dark:border-gray-600 rounded px-1.5 py-0.5 bg-transparent text-gray-500 dark:text-gray-400 focus:outline-none focus:border-blue-400 dark:focus:border-blue-500 w-32"
+                        />
+                        {savedFlash && (
+                            <span className="text-xs text-green-500 dark:text-green-400 font-semibold transition-opacity">✓ Guardado</span>
+                        )}
+                    </div>
+                )}
+
                 {done && task.completed_at && (
                     <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">
                         Marcado el {fmtTs(task.completed_at)}
                     </p>
                 )}
-                {!done && (
+                {!done && !isCard && (
                     <p className="text-xs text-gray-400 dark:text-gray-500 mt-0.5">Pendiente</p>
                 )}
             </div>
@@ -90,7 +149,7 @@ function TaskRow({ task, onComplete, onUncomplete, completing }) {
                 ${fmt(task.amount)}
             </span>
 
-            {/* Uncheck confirmation */}
+            {/* Uncheck confirmation modal */}
             {confirmUncheck && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
                     <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6 max-w-sm w-full">
@@ -121,7 +180,7 @@ function TaskRow({ task, onComplete, onUncomplete, completing }) {
     )
 }
 
-function Section({ title, tasks, onComplete, onUncomplete, completing }) {
+function Section({ title, tasks, onComplete, onUncomplete, onDueDateChange, completing }) {
     if (tasks.length === 0) return null
     return (
         <div className="mb-6">
@@ -135,6 +194,7 @@ function Section({ title, tasks, onComplete, onUncomplete, completing }) {
                         task={t}
                         onComplete={onComplete}
                         onUncomplete={onUncomplete}
+                        onDueDateChange={onDueDateChange}
                         completing={completing}
                     />
                 ))}
@@ -148,7 +208,7 @@ export function TodoTasks() {
     const [month, setMonth] = useState(now.getMonth() + 1)
     const [year,  setYear]  = useState(now.getFullYear())
     const [tasks, setTasks] = useState([])
-    const [loading, setLoading] = useState(false)
+    const [loading,    setLoading]    = useState(false)
     const [completing, setCompleting] = useState(false)
 
     const load = useCallback(async (m, y) => {
@@ -178,8 +238,8 @@ export function TodoTasks() {
         setCompleting(true)
         try {
             const updated = await api.completeTodo({
-                month: task.month,
-                year:  task.year,
+                month:          task.month,
+                year:           task.year,
                 task_type:      task.task_type,
                 reference_id:   task.reference_id,
                 reference_name: task.reference_name,
@@ -191,10 +251,7 @@ export function TodoTasks() {
                     : t
             ))
         } catch (e) {
-            if (e.status === 409) {
-                // already completed — reload to sync
-                load(month, year)
-            }
+            if (e.status === 409) load(month, year)
         } finally {
             setCompleting(false)
         }
@@ -216,6 +273,29 @@ export function TodoTasks() {
             ))
         } finally {
             setCompleting(false)
+        }
+    }
+
+    async function handleDueDateChange(task, dueDate) {
+        // Optimistic update
+        setTasks(prev => prev.map(t =>
+            t.task_type === task.task_type && t.reference_id === task.reference_id
+                ? { ...t, due_date: dueDate }
+                : t
+        ))
+        try {
+            await api.updateTodoDueDate({
+                month:          task.month,
+                year:           task.year,
+                task_type:      task.task_type,
+                reference_id:   task.reference_id,
+                reference_name: task.reference_name,
+                amount:         task.amount,
+                due_date:       dueDate,
+            })
+        } catch {
+            // revert optimistic update on error
+            load(month, year)
         }
     }
 
@@ -271,6 +351,7 @@ export function TodoTasks() {
                         tasks={cardTasks}
                         onComplete={handleComplete}
                         onUncomplete={handleUncomplete}
+                        onDueDateChange={handleDueDateChange}
                         completing={completing}
                     />
                     <Section
@@ -278,6 +359,7 @@ export function TodoTasks() {
                         tasks={cobranzaTasks}
                         onComplete={handleComplete}
                         onUncomplete={handleUncomplete}
+                        onDueDateChange={handleDueDateChange}
                         completing={completing}
                     />
                 </>

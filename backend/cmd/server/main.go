@@ -112,6 +112,7 @@ func main() {
 		r.Get("/todos", handlers.GetTodos)
 		r.Post("/todos/complete", handlers.CompleteTodo)
 		r.Post("/todos/uncomplete", handlers.UncompleteTodo)
+		r.Put("/todos/due-date", handlers.UpdateTodoDueDate)
 
 		// Dashboards
 		r.Get("/dashboards/card-spending", handlers.GetCardSpending)
