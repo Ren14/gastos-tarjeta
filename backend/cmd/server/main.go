@@ -81,6 +81,19 @@ func main() {
 		r.Delete("/cashflow/entries/{id}", handlers.DeleteCashflowEntry)
 		r.Get("/cashflow/card-totals", handlers.GetCardTotals)
 
+		// Splits
+		r.Get("/splits", handlers.GetSplits)
+		r.Post("/splits", handlers.CreateSplit)
+		r.Get("/splits/{id}", handlers.GetSplit)
+		r.Put("/splits/{id}", handlers.UpdateSplit)
+		r.Delete("/splits/{id}", handlers.DeleteSplit)
+		r.Get("/splits/{id}/participants", handlers.GetSplitParticipants)
+		r.Post("/splits/{id}/participants", handlers.AddSplitParticipant)
+		r.Put("/splits/{id}/participants/{pid}", handlers.UpdateSplitParticipant)
+		r.Delete("/splits/{id}/participants/{pid}", handlers.RemoveSplitParticipant)
+		r.Post("/splits/{id}/entries", handlers.SaveSplitEntry)
+		r.Get("/splits/{id}/matrix", handlers.GetSplitMatrix)
+
 		// Admin
 		r.Post("/admin/export-db", handlers.ExportDB)
 		r.Post("/admin/import-db", handlers.ImportDB)

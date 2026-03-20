@@ -116,6 +116,19 @@ export const api = {
     deleteCashflowEntry: (id) => request(`/cashflow/entries/${id}`, { method: 'DELETE' }),
     getCardTotals: (year) => request(`/cashflow/card-totals?year=${year}`),
 
+    // Splits
+    getSplits: () => request('/splits'),
+    createSplit: (data) => request('/splits', { method: 'POST', body: JSON.stringify(data) }),
+    getSplit: (id) => request(`/splits/${id}`),
+    updateSplit: (id, data) => request(`/splits/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    deleteSplit: (id) => request(`/splits/${id}`, { method: 'DELETE' }),
+    getSplitParticipants: (id) => request(`/splits/${id}/participants`),
+    addParticipant: (id, data) => request(`/splits/${id}/participants`, { method: 'POST', body: JSON.stringify(data) }),
+    updateParticipant: (id, pid, data) => request(`/splits/${id}/participants/${pid}`, { method: 'PUT', body: JSON.stringify(data) }),
+    removeParticipant: (id, pid) => request(`/splits/${id}/participants/${pid}`, { method: 'DELETE' }),
+    getSplitMatrix: (id, year) => request(`/splits/${id}/matrix?year=${year}`),
+    saveSplitEntry: (id, data) => request(`/splits/${id}/entries`, { method: 'POST', body: JSON.stringify(data) }),
+
     truncateDB: async () => {
         const res = await fetch(`${BASE_URL}/admin/truncate-db`, {
             method: 'POST',

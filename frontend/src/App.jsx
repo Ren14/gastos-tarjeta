@@ -4,6 +4,7 @@ import { LoadExpense } from './pages/ExpenseForm'
 import { Dashboard } from './pages/Dashboard'
 import { Flujo } from './pages/Flujo'
 import { CardsPage, RecurringPage, CotizacionPage, CategoriesPage } from './pages/Config'
+import { Divisiones } from './pages/Divisiones'
 import { Backup } from './pages/Backup'
 import { Login } from './pages/Login'
 import { AuthProvider, useAuth } from './context/AuthContext'
@@ -14,6 +15,7 @@ const NAV_ITEMS = [
     { id: 'flujo',      icon: '💰',  label: 'Flujo' },
     { id: 'dashboard',  icon: '📊',  label: 'Resumen tarjetas' },
     { id: 'recurring',  icon: '🔁',  label: 'Recurrentes' },
+    { id: 'divisiones', icon: '✂️',  label: 'Divisiones' },
     { id: 'cotizacion', icon: '💵',  label: 'Cotización USD' },
     { id: 'cards',      icon: '💳',  label: 'Tarjetas' },
     { id: 'categories', icon: '🗂️', label: 'Categorías' },
@@ -224,6 +226,7 @@ function AppContent() {
                     {activeTab === 'flujo'      && <Flujo />}
                     {activeTab === 'cards'      && <div className="md:max-w-lg"><CardsPage /></div>}
                     {activeTab === 'recurring'  && <div className="md:max-w-lg"><RecurringPage /></div>}
+                    {activeTab === 'divisiones' && <Divisiones />}
                     {activeTab === 'categories' && <div className="md:max-w-lg"><CategoriesPage /></div>}
                     {activeTab === 'cotizacion' && <div className="md:max-w-lg"><CotizacionPage /></div>}
                     {activeTab === 'backup'     && <div className="md:max-w-lg"><Backup /></div>}
