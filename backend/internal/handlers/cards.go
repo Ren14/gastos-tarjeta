@@ -3,10 +3,12 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 
 	"github.com/Ren14/gastos-tarjeta/internal/db"
+	"github.com/Ren14/gastos-tarjeta/internal/helpers"
 	"github.com/Ren14/gastos-tarjeta/internal/models"
 	"github.com/go-chi/chi/v5"
 )
@@ -52,6 +54,8 @@ func CreateCard(w http.ResponseWriter, r *http.Request) {
 	}
 
 	c.Active = true
+	helpers.LogAudit(r.Context(), "card", c.ID, "create",
+		fmt.Sprintf("Tarjeta creada: %s", c.Name), nil, nil)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(c)
@@ -79,5 +83,7 @@ func UpdateCard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	helpers.LogAudit(r.Context(), "card", id, "update",
+		fmt.Sprintf("Tarjeta editada: %s", c.Name), nil, nil)
 	w.WriteHeader(http.StatusOK)
 }

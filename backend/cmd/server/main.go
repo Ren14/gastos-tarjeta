@@ -105,6 +105,9 @@ func main() {
 		// Cobranzas
 		r.Get("/cobranzas", handlers.GetCobranzas)
 
+		// Historial
+		r.Get("/audit", handlers.GetAuditLog)
+
 		// Dashboards
 		r.Get("/dashboards/card-spending", handlers.GetCardSpending)
 		r.Get("/dashboards/cashflow", handlers.GetCashflowDashboard)

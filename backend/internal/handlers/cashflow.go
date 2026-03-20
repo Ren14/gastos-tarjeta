@@ -2,11 +2,13 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
 
 	"github.com/Ren14/gastos-tarjeta/internal/db"
+	"github.com/Ren14/gastos-tarjeta/internal/helpers"
 	"github.com/go-chi/chi/v5"
 )
 
@@ -206,6 +208,10 @@ func SaveCashflowEntry(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+	var catName string
+	db.Pool.QueryRow(r.Context(), "SELECT name FROM cashflow_categories WHERE id = $1", req.CategoryID).Scan(&catName)
+	helpers.LogAudit(r.Context(), "cashflow_entry", e.ID, "update",
+		fmt.Sprintf("Flujo actualizado: %s %d/%d = $%.0f", catName, req.Month, req.Year, req.Amount), nil, nil)
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(e)
 }

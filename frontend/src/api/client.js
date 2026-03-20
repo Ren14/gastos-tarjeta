@@ -133,6 +133,13 @@ export const api = {
     // Cobranzas
     getCobranzas: (year) => request(`/cobranzas?year=${year}`),
 
+    // Audit log
+    getAuditLog: (limit = 50, offset = 0, entityType = '') => {
+        const params = new URLSearchParams({ limit, offset })
+        if (entityType) params.append('entity_type', entityType)
+        return request(`/audit?${params}`)
+    },
+
     // Splits
     getSplits: () => request('/splits'),
     createSplit: (data) => request('/splits', { method: 'POST', body: JSON.stringify(data) }),

@@ -3,12 +3,15 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/go-chi/chi/v5"
 
 	"github.com/Ren14/gastos-tarjeta/internal/db"
+	"github.com/Ren14/gastos-tarjeta/internal/helpers"
 	"github.com/Ren14/gastos-tarjeta/internal/models"
 )
 
@@ -66,6 +69,9 @@ func CreateRecurring(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	helpers.LogAudit(r.Context(), "recurring", re.ID, "create",
+		fmt.Sprintf("Recurrente creado: %s", re.Merchant), nil, nil)
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(re)
@@ -91,6 +97,7 @@ func UpdateRecurring(w http.ResponseWriter, r *http.Request) {
 		body.Currency = "USD"
 	}
 
+	idInt, _ := strconv.Atoi(id)
 	_, err := db.Pool.Exec(context.Background(),
 		`UPDATE recurring_expenses
 		SET card_id=$1, category_id=$2, merchant=$3, amount_usd=$4, amount_ars=$5, currency=$6, active=$7
@@ -101,6 +108,9 @@ func UpdateRecurring(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	helpers.LogAudit(r.Context(), "recurring", idInt, "update",
+		fmt.Sprintf("Recurrente editado: %s", body.Merchant), nil, nil)
 
 	w.WriteHeader(http.StatusNoContent)
 }
@@ -199,6 +209,9 @@ func GenerateRecurring(w http.ResponseWriter, r *http.Request) {
 		}
 		generated++
 	}
+
+	helpers.LogAudit(r.Context(), "recurring", 0, "create",
+		fmt.Sprintf("Recurrentes generados para %d/%d: %d gastos", body.Month, body.Year, generated), nil, nil)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)

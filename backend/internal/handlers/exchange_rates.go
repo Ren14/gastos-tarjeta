@@ -3,10 +3,12 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 
 	"github.com/Ren14/gastos-tarjeta/internal/db"
+	"github.com/Ren14/gastos-tarjeta/internal/helpers"
 	"github.com/Ren14/gastos-tarjeta/internal/models"
 	"github.com/go-chi/chi/v5"
 )
@@ -49,6 +51,9 @@ func CreateExchangeRate(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	helpers.LogAudit(r.Context(), "exchange_rate", rate.ID, "create",
+		fmt.Sprintf("Cotización cargada: %d/%d = $%.2f", rate.Month, rate.Year, rate.UsdToArs), nil, nil)
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
@@ -103,6 +108,12 @@ func UpdateExchangeRate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var oldRate float64
+	var month, year int
+	db.Pool.QueryRow(context.Background(),
+		"SELECT usd_to_ars, month, year FROM exchange_rate_history WHERE id = $1", id,
+	).Scan(&oldRate, &month, &year)
+
 	_, err = db.Pool.Exec(context.Background(),
 		"UPDATE exchange_rate_history SET usd_to_ars=$1, notes=$2 WHERE id=$3",
 		rate.UsdToArs, rate.Notes, id)
@@ -110,6 +121,9 @@ func UpdateExchangeRate(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	helpers.LogAudit(r.Context(), "exchange_rate", id, "update",
+		fmt.Sprintf("Cotización actualizada: %d/%d = $%.2f → $%.2f", month, year, oldRate, rate.UsdToArs), nil, nil)
 
 	w.WriteHeader(http.StatusOK)
 }

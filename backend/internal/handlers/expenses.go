@@ -3,11 +3,13 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 	"time"
 
 	"github.com/Ren14/gastos-tarjeta/internal/db"
+	"github.com/Ren14/gastos-tarjeta/internal/helpers"
 	"github.com/Ren14/gastos-tarjeta/internal/models"
 	"github.com/go-chi/chi/v5"
 )
@@ -74,6 +76,9 @@ func CreateExpense(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	helpers.LogAudit(r.Context(), "expense", e.ID, "create",
+		fmt.Sprintf("Gasto creado: %s $%.0f", e.Merchant, e.TotalAmount), nil, nil)
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(e)
@@ -86,11 +91,20 @@ func DeleteExpense(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var merchant string
+	var totalAmount float64
+	db.Pool.QueryRow(context.Background(),
+		"SELECT merchant, total_amount FROM expenses WHERE id = $1", id,
+	).Scan(&merchant, &totalAmount)
+
 	_, err = db.Pool.Exec(context.Background(), "DELETE FROM expenses WHERE id = $1", id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	helpers.LogAudit(r.Context(), "expense", id, "delete",
+		fmt.Sprintf("Gasto eliminado: %s $%.0f", merchant, totalAmount), nil, nil)
 
 	w.WriteHeader(http.StatusNoContent)
 }
@@ -112,6 +126,11 @@ func UpdateExpense(w http.ResponseWriter, r *http.Request) {
 		e.Installments = 1
 	}
 
+	var oldAmount float64
+	db.Pool.QueryRow(context.Background(),
+		"SELECT total_amount FROM expenses WHERE id = $1", id,
+	).Scan(&oldAmount)
+
 	_, err = db.Pool.Exec(context.Background(),
 		`UPDATE expenses SET card_id=$1, category_id=$2, merchant=$3,
 		total_amount=$4, installments=$5, purchase_date=$6, notes=$7, color=$8
@@ -123,6 +142,12 @@ func UpdateExpense(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	desc := fmt.Sprintf("Gasto editado: %s", e.Merchant)
+	if oldAmount != e.TotalAmount {
+		desc = fmt.Sprintf("Gasto editado: %s - monto $%.0f → $%.0f", e.Merchant, oldAmount, e.TotalAmount)
+	}
+	helpers.LogAudit(r.Context(), "expense", id, "update", desc, nil, nil)
 
 	w.WriteHeader(http.StatusOK)
 }

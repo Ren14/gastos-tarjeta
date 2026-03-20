@@ -7,6 +7,7 @@ import { CardsPage, RecurringPage, CotizacionPage, CategoriesPage } from './page
 import { Divisiones } from './pages/Divisiones'
 import { Dashboards } from './pages/Dashboards'
 import { Cobranzas } from './pages/Cobranzas'
+import { Historial } from './pages/Historial'
 import { Backup } from './pages/Backup'
 import { Login } from './pages/Login'
 import { AuthProvider, useAuth } from './context/AuthContext'
@@ -23,6 +24,7 @@ const NAV_ITEMS = [
     { id: 'cotizacion', icon: '💵',  label: 'Cotización USD' },
     { id: 'cards',      icon: '💳',  label: 'Tarjetas' },
     { id: 'categories', icon: '🗂️', label: 'Categorías' },
+    { id: 'historial',  icon: '📋',  label: 'Historial' },
     { id: 'backup',     icon: '💾',  label: 'Backup' },
 ]
 
@@ -235,6 +237,7 @@ function AppContent() {
                     {activeTab === 'divisiones' && <Divisiones />}
                     {activeTab === 'categories' && <div className="md:max-w-lg"><CategoriesPage /></div>}
                     {activeTab === 'cotizacion' && <div className="md:max-w-lg"><CotizacionPage /></div>}
+                    {activeTab === 'historial'  && <Historial />}
                     {activeTab === 'backup'     && <div className="md:max-w-lg"><Backup /></div>}
                 </div>
             </div>
