@@ -41,6 +41,178 @@ function ClasifSelect({ cat, clasificaciones, savedClasif, onChange }) {
     )
 }
 
+// ── Classification management modal ───────────────────────────────────────────
+
+function ClasifModal({ clasificaciones, categories, onClose, onSaved }) {
+    const usedIds = new Set(categories.map(c => c.clasificacion_id).filter(Boolean))
+
+    const [showForm,   setShowForm]   = useState(false)
+    const [newName,    setNewName]    = useState('')
+    const [newOrder,   setNewOrder]   = useState(() => {
+        const max = clasificaciones.reduce((m, c) => Math.max(m, c.sort_order), 0)
+        return max + 1
+    })
+    const [creating,   setCreating]   = useState(false)
+    const [editingId,  setEditingId]  = useState(null)
+    const [editName,   setEditName]   = useState('')
+    const [editOrder,  setEditOrder]  = useState(0)
+    const [confirmDel, setConfirmDel] = useState(null) // clasif id pending delete
+    const [error,      setError]      = useState('')
+
+    async function handleCreate(e) {
+        e.preventDefault()
+        if (!newName.trim()) return
+        setCreating(true)
+        setError('')
+        try {
+            await api.createClasificacion({ name: newName.trim(), sort_order: newOrder })
+            setNewName('')
+            setShowForm(false)
+            onSaved()
+        } catch { setError('Error al crear') }
+        finally { setCreating(false) }
+    }
+
+    async function handleUpdate(cl) {
+        setError('')
+        try {
+            await api.updateClasificacion(cl.id, { name: editName.trim() || cl.name, sort_order: editOrder })
+            setEditingId(null)
+            onSaved()
+        } catch { setError('Error al guardar') }
+    }
+
+    async function handleDelete(id) {
+        setError('')
+        try {
+            await api.deleteClasificacion(id)
+            setConfirmDel(null)
+            onSaved()
+        } catch (err) {
+            const msg = await err.message || 'Error al eliminar'
+            setError(msg)
+            setConfirmDel(null)
+        }
+    }
+
+    function startEdit(cl) {
+        setEditingId(cl.id)
+        setEditName(cl.name)
+        setEditOrder(cl.sort_order)
+        setConfirmDel(null)
+        setError('')
+    }
+
+    return (
+        <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4" onClick={onClose}>
+            <div
+                className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl w-full max-w-md flex flex-col max-h-[85vh]"
+                onClick={e => e.stopPropagation()}
+            >
+                <div className="flex items-center justify-between px-6 pt-5 pb-4 border-b border-gray-100 dark:border-gray-700 flex-shrink-0">
+                    <h2 className="text-base font-bold text-gray-900 dark:text-gray-100">Clasificaciones</h2>
+                    <button onClick={onClose} className="text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 text-xl leading-none w-7 h-7 flex items-center justify-center rounded">×</button>
+                </div>
+
+                <div className="overflow-y-auto flex-1 px-6 pt-4 pb-6">
+                    {error && (
+                        <p className="text-xs text-red-500 mb-3 bg-red-50 dark:bg-red-900/20 px-3 py-2 rounded-lg">{error}</p>
+                    )}
+
+                    {/* New classification form */}
+                    {showForm ? (
+                        <form onSubmit={handleCreate} className="flex gap-2 mb-4">
+                            <input
+                                value={newName}
+                                onChange={e => setNewName(e.target.value)}
+                                placeholder="Nombre…"
+                                autoFocus
+                                className="flex-1 px-3 py-2 border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg text-sm outline-none focus:border-gray-400"
+                            />
+                            <input
+                                type="number"
+                                value={newOrder}
+                                onChange={e => setNewOrder(parseInt(e.target.value) || 0)}
+                                className="w-16 px-2 py-2 border border-gray-200 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded-lg text-sm outline-none text-center"
+                                title="Orden"
+                            />
+                            <button type="submit" disabled={creating || !newName.trim()}
+                                className="px-3 py-2 bg-gray-900 text-white text-sm rounded-lg disabled:opacity-40">
+                                Crear
+                            </button>
+                            <button type="button" onClick={() => setShowForm(false)}
+                                className="px-3 py-2 text-sm text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">
+                                ✕
+                            </button>
+                        </form>
+                    ) : (
+                        <button
+                            onClick={() => { setShowForm(true); setError('') }}
+                            className="w-full mb-4 px-3 py-2 border border-dashed border-gray-300 dark:border-gray-600 rounded-lg text-sm text-gray-500 dark:text-gray-400 hover:border-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors text-left">
+                            + Nueva clasificación
+                        </button>
+                    )}
+
+                    {/* List */}
+                    {clasificaciones.map(cl => {
+                        const inUse   = usedIds.has(cl.id)
+                        const usedCnt = categories.filter(c => c.clasificacion_id === cl.id).length
+
+                        if (editingId === cl.id) return (
+                            <div key={cl.id} className="flex items-center gap-2 py-2 border-b border-gray-100 dark:border-gray-700">
+                                <span className="w-8 text-center text-xs text-gray-400">{cl.sort_order}</span>
+                                <input
+                                    value={editName}
+                                    onChange={e => setEditName(e.target.value)}
+                                    autoFocus
+                                    className="flex-1 px-2 py-1 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded text-sm outline-none"
+                                />
+                                <input
+                                    type="number"
+                                    value={editOrder}
+                                    onChange={e => setEditOrder(parseInt(e.target.value) || 0)}
+                                    className="w-14 px-2 py-1 border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-100 rounded text-sm outline-none text-center"
+                                />
+                                <button onClick={() => handleUpdate(cl)} className="text-xs text-green-600 font-medium">✓</button>
+                                <button onClick={() => setEditingId(null)} className="text-xs text-gray-400 dark:text-gray-500">✕</button>
+                            </div>
+                        )
+
+                        if (confirmDel === cl.id) return (
+                            <div key={cl.id} className="flex items-center gap-2 py-2 border-b border-gray-100 dark:border-gray-700 bg-red-50 dark:bg-red-900/10 px-2 rounded-lg">
+                                <span className="flex-1 text-sm text-red-600 dark:text-red-400">¿Eliminar "{cl.name}"?</span>
+                                <button onClick={() => handleDelete(cl.id)} className="text-xs text-red-600 font-medium hover:text-red-800">Sí</button>
+                                <button onClick={() => setConfirmDel(null)} className="text-xs text-gray-400 dark:text-gray-500">No</button>
+                            </div>
+                        )
+
+                        return (
+                            <div key={cl.id} className="flex items-center gap-2 py-1.5 border-b border-gray-100 dark:border-gray-700 last:border-0">
+                                <span className="w-8 text-center text-xs text-gray-300 dark:text-gray-600 tabular-nums">{cl.sort_order}</span>
+                                <span className="flex-1 text-sm text-gray-800 dark:text-gray-200">{cl.name}</span>
+                                {inUse && (
+                                    <span className="text-xs text-gray-300 dark:text-gray-600" title={`En uso por ${usedCnt} concepto(s)`}>{usedCnt}</span>
+                                )}
+                                <button onClick={() => startEdit(cl)} className="text-xs text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">✏</button>
+                                <button
+                                    onClick={() => inUse ? setError(`No se puede eliminar "${cl.name}": está en uso por ${usedCnt} concepto(s)`) : setConfirmDel(cl.id)}
+                                    className={`text-xs ${inUse ? 'text-gray-200 dark:text-gray-700 cursor-not-allowed' : 'text-red-400 hover:text-red-600'}`}
+                                    title={inUse ? `En uso por ${usedCnt} concepto(s)` : 'Eliminar'}>
+                                    ✕
+                                </button>
+                            </div>
+                        )
+                    })}
+
+                    {clasificaciones.length === 0 && (
+                        <p className="text-xs text-gray-300 dark:text-gray-600 py-2">Sin clasificaciones</p>
+                    )}
+                </div>
+            </div>
+        </div>
+    )
+}
+
 // ── Category management modal ─────────────────────────────────────────────────
 
 function CategoryModal({ categories, onClose, onSaved }) {
@@ -256,6 +428,7 @@ export function Flujo() {
     const [hidePast,        setHidePast]        = useState(true)
     const [savedClasif,     setSavedClasif]     = useState({})
     const [clasifCollapsed, setClasifCollapsed] = useState(false)
+    const [showClasifModal, setShowClasifModal] = useState(false)
 
     const clasifW = clasifCollapsed ? W_CLASIF_COLLAPSED : W_CLASIF
 
@@ -375,10 +548,16 @@ export function Flujo() {
                     <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Ocultar meses anteriores</span>
                 </label>
 
-                <button onClick={() => setShowModal(true)}
-                    className="ml-auto px-3 py-1.5 text-xs font-semibold text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-                    Conceptos
-                </button>
+                <div className="ml-auto flex gap-2">
+                    <button onClick={() => setShowClasifModal(true)}
+                        className="px-3 py-1.5 text-xs font-semibold text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                        Clasificaciones
+                    </button>
+                    <button onClick={() => setShowModal(true)}
+                        className="px-3 py-1.5 text-xs font-semibold text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                        Conceptos
+                    </button>
+                </div>
             </div>
 
             {/* Matrix */}
@@ -637,6 +816,16 @@ export function Flujo() {
                     categories={categories}
                     onClose={() => setShowModal(false)}
                     onSaved={() => { setShowModal(false); loadAll() }}
+                />
+            )}
+
+            {/* Clasificaciones modal */}
+            {showClasifModal && (
+                <ClasifModal
+                    clasificaciones={clasificaciones}
+                    categories={categories}
+                    onClose={() => setShowClasifModal(false)}
+                    onSaved={() => loadAll()}
                 />
             )}
         </div>

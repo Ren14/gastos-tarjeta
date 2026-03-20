@@ -77,8 +77,9 @@ func manualExport(ctx context.Context) (string, error) {
 
 	// Truncate in reverse FK order; CASCADE handles dependencies
 	fmt.Fprintf(&buf,
-		"TRUNCATE cashflow_entries, expenses, recurring_expenses, "+
-			"exchange_rate_history, cashflow_categories, categories, cards "+
+		"TRUNCATE split_entries, split_participants, splits, cashflow_entries, expenses, "+
+			"recurring_expenses, exchange_rate_history, cashflow_categories, "+
+			"flujo_clasificaciones, categories, cards "+
 			"RESTART IDENTITY CASCADE;\n\n")
 
 	type tableSpec struct {
@@ -95,8 +96,12 @@ func manualExport(ctx context.Context) (string, error) {
 			"SELECT id, name, icon, color_hex FROM categories ORDER BY id",
 		},
 		{
+			"flujo_clasificaciones",
+			"SELECT id, name, sort_order, created_at FROM flujo_clasificaciones ORDER BY id",
+		},
+		{
 			"cashflow_categories",
-			"SELECT id, name, type, sort_order, active, created_at FROM cashflow_categories ORDER BY id",
+			"SELECT id, name, type, sort_order, active, clasificacion_id, created_at FROM cashflow_categories ORDER BY id",
 		},
 		{
 			"exchange_rate_history",
@@ -115,6 +120,18 @@ func manualExport(ctx context.Context) (string, error) {
 		{
 			"cashflow_entries",
 			"SELECT id, category_id, month, year, amount::float8, notes, color, created_at FROM cashflow_entries ORDER BY id",
+		},
+		{
+			"splits",
+			"SELECT id, recurring_id, name, created_at FROM splits ORDER BY id",
+		},
+		{
+			"split_participants",
+			"SELECT id, split_id, name, sort_order, created_at FROM split_participants ORDER BY id",
+		},
+		{
+			"split_entries",
+			"SELECT id, split_id, participant_id, month, year, color, created_at FROM split_entries ORDER BY id",
 		},
 	}
 
@@ -248,6 +265,15 @@ func TruncateDB(w http.ResponseWriter, r *http.Request) {
 // (generated before certain tables were created) importable without errors.
 const safeTruncateStmt = `DO $$
 BEGIN
+  IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'split_entries') THEN
+    TRUNCATE split_entries RESTART IDENTITY CASCADE;
+  END IF;
+  IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'split_participants') THEN
+    TRUNCATE split_participants RESTART IDENTITY CASCADE;
+  END IF;
+  IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'splits') THEN
+    TRUNCATE splits RESTART IDENTITY CASCADE;
+  END IF;
   IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'cashflow_entries') THEN
     TRUNCATE cashflow_entries RESTART IDENTITY CASCADE;
   END IF;
@@ -262,6 +288,9 @@ BEGIN
   END IF;
   IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'cashflow_categories') THEN
     TRUNCATE cashflow_categories RESTART IDENTITY CASCADE;
+  END IF;
+  IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'flujo_clasificaciones') THEN
+    TRUNCATE flujo_clasificaciones RESTART IDENTITY CASCADE;
   END IF;
   IF EXISTS (SELECT FROM pg_tables WHERE schemaname = 'public' AND tablename = 'categories') THEN
     TRUNCATE categories RESTART IDENTITY CASCADE;

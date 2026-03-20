@@ -76,6 +76,7 @@ func main() {
 		r.Get("/flujo/clasificaciones", handlers.GetClasificaciones)
 		r.Post("/flujo/clasificaciones", handlers.CreateClasificacion)
 		r.Put("/flujo/clasificaciones/{id}", handlers.UpdateClasificacion)
+		r.Delete("/flujo/clasificaciones/{id}", handlers.DeleteClasificacion)
 
 		// Cashflow
 		r.Get("/cashflow/categories", handlers.GetCashflowCategories)

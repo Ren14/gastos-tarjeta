@@ -112,6 +112,7 @@ export const api = {
     getClasificaciones: () => request('/flujo/clasificaciones'),
     createClasificacion: (data) => request('/flujo/clasificaciones', { method: 'POST', body: JSON.stringify(data) }),
     updateClasificacion: (id, data) => request(`/flujo/clasificaciones/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    deleteClasificacion: (id) => request(`/flujo/clasificaciones/${id}`, { method: 'DELETE' }),
     updateCategoryClasificacion: (categoryId, clasificacionId) =>
         request(`/cashflow/categories/${categoryId}/clasificacion`, { method: 'PUT', body: JSON.stringify({ clasificacion_id: clasificacionId }) }),
 

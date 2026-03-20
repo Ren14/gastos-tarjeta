@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -85,6 +86,32 @@ func UpdateClasificacion(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(c)
+}
+
+func DeleteClasificacion(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.Atoi(chi.URLParam(r, "id"))
+	if err != nil {
+		http.Error(w, "invalid id", http.StatusBadRequest)
+		return
+	}
+	var count int
+	if err := db.Pool.QueryRow(r.Context(),
+		"SELECT COUNT(*) FROM cashflow_categories WHERE clasificacion_id = $1", id,
+	).Scan(&count); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	if count > 0 {
+		http.Error(w, fmt.Sprintf("en uso por %d concepto(s)", count), http.StatusConflict)
+		return
+	}
+	if _, err := db.Pool.Exec(r.Context(),
+		"DELETE FROM flujo_clasificaciones WHERE id = $1", id,
+	); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func UpdateCategoryClasificacion(w http.ResponseWriter, r *http.Request) {
