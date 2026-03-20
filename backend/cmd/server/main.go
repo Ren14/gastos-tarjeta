@@ -100,6 +100,9 @@ func main() {
 		r.Post("/splits/{id}/entries", handlers.SaveSplitEntry)
 		r.Get("/splits/{id}/matrix", handlers.GetSplitMatrix)
 
+		// Cobranzas
+		r.Get("/cobranzas", handlers.GetCobranzas)
+
 		// Dashboards
 		r.Get("/dashboards/card-spending", handlers.GetCardSpending)
 		r.Get("/dashboards/cashflow", handlers.GetCashflowDashboard)

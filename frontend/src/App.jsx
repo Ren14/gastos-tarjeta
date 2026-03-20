@@ -6,6 +6,7 @@ import { Flujo } from './pages/Flujo'
 import { CardsPage, RecurringPage, CotizacionPage, CategoriesPage } from './pages/Config'
 import { Divisiones } from './pages/Divisiones'
 import { Dashboards } from './pages/Dashboards'
+import { Cobranzas } from './pages/Cobranzas'
 import { Backup } from './pages/Backup'
 import { Login } from './pages/Login'
 import { AuthProvider, useAuth } from './context/AuthContext'
@@ -14,6 +15,7 @@ import { setOnUnauthorized } from './api/client'
 const NAV_ITEMS = [
     { id: 'load',       icon: '+',   label: 'Cargar gasto' },
     { id: 'flujo',      icon: '💰',  label: 'Flujo' },
+    { id: 'cobranzas',  icon: '🧾',  label: 'Cobranzas' },
     { id: 'dashboards', icon: '📈',  label: 'Dashboards' },
     { id: 'dashboard',  icon: '📊',  label: 'Resumen tarjetas' },
     { id: 'recurring',  icon: '🔁',  label: 'Recurrentes' },
@@ -227,6 +229,7 @@ function AppContent() {
                     {activeTab === 'dashboard'  && <Dashboard key={savedCount} />}
                     {activeTab === 'dashboards' && <Dashboards />}
                     {activeTab === 'flujo'      && <Flujo />}
+                    {activeTab === 'cobranzas'  && <Cobranzas />}
                     {activeTab === 'cards'      && <div className="md:max-w-lg"><CardsPage /></div>}
                     {activeTab === 'recurring'  && <div className="md:max-w-lg"><RecurringPage /></div>}
                     {activeTab === 'divisiones' && <Divisiones />}

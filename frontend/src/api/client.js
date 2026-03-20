@@ -128,6 +128,9 @@ export const api = {
     getCashflowDashboard: (year) => request(`/dashboards/cashflow?year=${year}`),
     getSavingsDashboard: (year) => request(`/dashboards/savings?year=${year}`),
 
+    // Cobranzas
+    getCobranzas: (year) => request(`/cobranzas?year=${year}`),
+
     // Splits
     getSplits: () => request('/splits'),
     createSplit: (data) => request('/splits', { method: 'POST', body: JSON.stringify(data) }),
