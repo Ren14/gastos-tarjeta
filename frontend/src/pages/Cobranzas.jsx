@@ -3,7 +3,7 @@ import { api } from '../api/client'
 
 const MONTHS_SHORT = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']
 
-const W_CONCEPTO = 140
+const W_CONCEPTO = 200
 const W_MONTH    = 90
 
 function fmt(n) {
@@ -33,8 +33,10 @@ function ClassificationMatrix({ group, months, isPast, isCurrent }) {
                         <tr className="border-b-2 border-gray-200 dark:border-gray-700">
                             <th
                                 className="sticky left-0 z-30 bg-gray-50 dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 text-left px-3 py-2 text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wide overflow-hidden"
-                                style={{ minWidth: W_CONCEPTO, width: W_CONCEPTO }}>
-                                Concepto
+                                style={{ width: W_CONCEPTO, minWidth: W_CONCEPTO, maxWidth: W_CONCEPTO }}>
+                                <div style={{ overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
+                                    Concepto
+                                </div>
                             </th>
                             {months.map(m => (
                                 <th key={m}
@@ -50,7 +52,7 @@ function ClassificationMatrix({ group, months, isPast, isCurrent }) {
                             <tr key={cat.category_id} className="border-b border-gray-100 dark:border-gray-800 last:border-0">
                                 <td
                                     className="sticky left-0 z-20 bg-white dark:bg-gray-900 border-r border-gray-100 dark:border-gray-800 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 overflow-hidden"
-                                    style={{ minWidth: W_CONCEPTO, width: W_CONCEPTO }}>
+                                    style={{ width: W_CONCEPTO, minWidth: W_CONCEPTO, maxWidth: W_CONCEPTO }}>
                                     <div title={cat.category_name} style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                         {cat.category_name}
                                     </div>
@@ -81,7 +83,7 @@ function ClassificationMatrix({ group, months, isPast, isCurrent }) {
                         <tr className="border-t-2 border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800/60">
                             <td
                                 className="sticky left-0 z-20 bg-gray-50 dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 px-3 py-2.5 text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider overflow-hidden"
-                                style={{ minWidth: W_CONCEPTO, width: W_CONCEPTO }}>
+                                style={{ width: W_CONCEPTO, minWidth: W_CONCEPTO, maxWidth: W_CONCEPTO }}>
                                 Total
                             </td>
                             {months.map(m => {
