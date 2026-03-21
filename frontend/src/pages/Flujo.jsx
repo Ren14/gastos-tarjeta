@@ -405,6 +405,7 @@ function EditableCell({ value, color, note, entryId, onSave, onSaveNote, isPast,
     const inputRef    = useRef(null)
     const noteRef     = useRef(null)
     const triangleRef = useRef(null)
+    const containerRef = useRef(null)
 
     function startEdit(openNote = false) {
         setInputVal(value > 0 ? String(Math.round(value)) : '')
@@ -450,13 +451,15 @@ function EditableCell({ value, color, note, entryId, onSave, onSaveNote, isPast,
         return (
             <td className={`px-2 py-1 whitespace-nowrap align-top ${cellBg}`}
                 style={{ minWidth: W_MONTH }}>
-                <div className="flex flex-col items-end gap-1.5 pt-0.5">
+                <div
+                    ref={containerRef}
+                    className="flex flex-col items-end gap-1.5 pt-0.5"
+                    onBlur={e => { if (!containerRef.current?.contains(e.relatedTarget)) commit() }}>
                     <input
                         ref={inputRef}
                         type="text"
                         value={inputVal}
                         onChange={e => setInputVal(e.target.value)}
-                        onBlur={commit}
                         onKeyDown={handleKey}
                         className="w-full text-right text-sm font-medium outline-none border-b-2 border-blue-400 bg-transparent tabular-nums"
                         placeholder="0"
