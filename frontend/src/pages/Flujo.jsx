@@ -504,7 +504,7 @@ function EditableCell({ value, color, note, entryId, onSave, onSaveNote, isPast,
 
     return (
         <td
-            onClick={startEdit}
+            onClick={() => startEdit()}
             className={`px-2 py-1.5 text-right text-sm whitespace-nowrap tabular-nums group/cell relative ${cellBg} ${getTextCls()} cursor-pointer hover:bg-blue-50/60 dark:hover:bg-blue-900/10`}
             style={{ minWidth: W_MONTH }}>
             {noteModal && entryId && (
