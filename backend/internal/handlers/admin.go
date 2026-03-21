@@ -3,9 +3,11 @@ package handlers
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"strconv"
 	"strings"
 	"time"
@@ -59,6 +61,37 @@ func ImportDB(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	writeAdminJSON(w, `{"success":true,"message":"Database restored successfully"}`)
+}
+
+// SetupTelegramWebhook registers the webhook URL with Telegram.
+func SetupTelegramWebhook(w http.ResponseWriter, r *http.Request) {
+	token := os.Getenv("TELEGRAM_BOT_TOKEN")
+	backendURL := os.Getenv("BACKEND_URL")
+	secret := os.Getenv("TELEGRAM_WEBHOOK_SECRET")
+
+	if token == "" || backendURL == "" {
+		http.Error(w, `{"error":"TELEGRAM_BOT_TOKEN or BACKEND_URL not configured"}`, http.StatusInternalServerError)
+		return
+	}
+
+	payload, _ := json.Marshal(map[string]string{
+		"url":          backendURL + "/telegram/webhook",
+		"secret_token": secret,
+	})
+
+	apiURL := fmt.Sprintf("https://api.telegram.org/bot%s/setWebhook", token)
+	resp, err := http.Post(apiURL, "application/json", bytes.NewReader(payload))
+	if err != nil {
+		http.Error(w, `{"error":"Failed to reach Telegram API"}`, http.StatusBadGateway)
+		return
+	}
+	defer resp.Body.Close()
+
+	var result map[string]interface{}
+	json.NewDecoder(resp.Body).Decode(&result)
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(result)
 }
 
 func writeAdminJSON(w http.ResponseWriter, body string) {

@@ -12,6 +12,7 @@ import (
 	"github.com/Ren14/gastos-tarjeta/internal/db"
 	"github.com/Ren14/gastos-tarjeta/internal/handlers"
 	authmw "github.com/Ren14/gastos-tarjeta/internal/middleware"
+	"github.com/Ren14/gastos-tarjeta/internal/telegram"
 )
 
 func main() {
@@ -28,7 +29,7 @@ func main() {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Access-Control-Allow-Origin", "*")
 			w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Confirm-Restore, X-Confirm-Truncate")
+			w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Confirm-Restore, X-Confirm-Truncate, X-Telegram-Bot-Api-Secret-Token")
 			if r.Method == "OPTIONS" {
 				w.WriteHeader(http.StatusOK)
 				return
@@ -39,6 +40,7 @@ func main() {
 
 	// Public
 	r.Post("/api/v1/auth/login", handlers.Login)
+	r.Post("/telegram/webhook", telegram.WebhookHandler)
 
 	r.Route("/api/v1", func(r chi.Router) {
 		r.Use(authmw.Authenticate)
@@ -124,6 +126,7 @@ func main() {
 		r.Post("/admin/export-db", handlers.ExportDB)
 		r.Post("/admin/import-db", handlers.ImportDB)
 		r.Post("/admin/truncate-db", handlers.TruncateDB)
+		r.Post("/admin/setup-telegram-webhook", handlers.SetupTelegramWebhook)
 	})
 
 	port := os.Getenv("PORT")

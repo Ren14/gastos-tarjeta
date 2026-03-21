@@ -13,6 +13,9 @@ export function Backup() {
     const [resetting,       setResetting]        = useState(false)
     const [resetResult,     setResetResult]      = useState(null)
 
+    const [telegramLoading, setTelegramLoading] = useState(false)
+    const [telegramResult,  setTelegramResult]  = useState(null)
+
     async function handleExport() {
         setExporting(true)
         try {
@@ -27,6 +30,19 @@ export function Backup() {
             alert('Error al exportar: ' + e.message)
         } finally {
             setExporting(false)
+        }
+    }
+
+    async function handleSetupTelegram() {
+        setTelegramLoading(true)
+        setTelegramResult(null)
+        try {
+            await api.setupTelegramWebhook()
+            setTelegramResult({ type: 'success', message: 'Webhook configurado correctamente' })
+        } catch (e) {
+            setTelegramResult({ type: 'error', message: e.message })
+        } finally {
+            setTelegramLoading(false)
         }
     }
 
@@ -142,6 +158,32 @@ export function Backup() {
                             : 'bg-red-50 border border-red-200 text-red-800'
                     }`}>
                         {result.type === 'success' ? '✅ ' : '❌ '}{result.message}
+                    </div>
+                )}
+            </div>
+
+            {/* ── Telegram ── */}
+            <div className="bg-white dark:bg-gray-800 dark:border-gray-700 rounded-2xl border border-gray-200 p-6 space-y-3">
+                <h2 className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">Telegram</h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400 leading-relaxed">
+                    Registra el webhook con Telegram para recibir mensajes del bot.
+                    Requiere que <code className="text-xs bg-gray-100 dark:bg-gray-700 px-1 py-0.5 rounded">TELEGRAM_BOT_TOKEN</code> y{' '}
+                    <code className="text-xs bg-gray-100 dark:bg-gray-700 px-1 py-0.5 rounded">BACKEND_URL</code> estén configurados en el servidor.
+                </p>
+                <button
+                    onClick={handleSetupTelegram}
+                    disabled={telegramLoading}
+                    className="flex items-center gap-2 px-4 py-2.5 bg-gray-900 text-white text-sm font-semibold rounded-xl disabled:opacity-50 hover:bg-gray-700 transition-colors"
+                >
+                    {telegramLoading ? 'Configurando…' : '⚙️ Configurar webhook de Telegram'}
+                </button>
+                {telegramResult && (
+                    <div className={`rounded-xl px-4 py-3 text-sm font-medium ${
+                        telegramResult.type === 'success'
+                            ? 'bg-green-50 border border-green-200 text-green-800'
+                            : 'bg-red-50 border border-red-200 text-red-800'
+                    }`}>
+                        {telegramResult.type === 'success' ? '✅ ' : '❌ '}{telegramResult.message}
                     </div>
                 )}
             </div>

@@ -160,6 +160,8 @@ export const api = {
     getSplitMatrix: (id, year) => request(`/splits/${id}/matrix?year=${year}`),
     saveSplitEntry: (id, data) => request(`/splits/${id}/entries`, { method: 'POST', body: JSON.stringify(data) }),
 
+    setupTelegramWebhook: () => request('/admin/setup-telegram-webhook', { method: 'POST' }),
+
     truncateDB: async () => {
         const res = await fetch(`${BASE_URL}/admin/truncate-db`, {
             method: 'POST',
