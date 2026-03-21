@@ -415,7 +415,6 @@ function EditableCell({ value, color, note, entryId, onSave, onSaveNote, isPast,
     }
 
     useEffect(() => { if (editing) inputRef.current?.focus() }, [editing])
-    useEffect(() => { if (editing && noteExpanded) noteRef.current?.focus() }, [editing, noteExpanded])
 
     function commit() {
         const n = parseFloat(inputVal.replace(/\./g, '').replace(',', '.')) || 0
