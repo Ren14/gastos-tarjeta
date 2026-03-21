@@ -518,7 +518,7 @@ function EditableCell({ value, color, note, entryId, onSave, onSaveNote, isPast,
             )}
             {tooltipVis && hasNote && (
                 <div style={{ position: 'fixed', top: tooltipPos.top, left: tooltipPos.left, zIndex: 9999, maxWidth: 200, pointerEvents: 'none' }}
-                    className="bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-700 rounded shadow text-xs p-2 text-gray-700 dark:text-gray-300 whitespace-pre-wrap break-words">
+                    className="bg-yellow-50 dark:bg-yellow-900 border border-yellow-200 dark:border-yellow-700 rounded shadow text-xs p-2 text-gray-700 dark:text-gray-300 whitespace-pre-wrap break-words">
                     {note}
                 </div>
             )}
@@ -614,7 +614,7 @@ export function Flujo() {
     const [loading,         setLoading]         = useState(true)
     const [hidePast,        setHidePast]        = useState(true)
     const [savedClasif,     setSavedClasif]     = useState({})
-    const [clasifCollapsed, setClasifCollapsed] = useState(false)
+    const [clasifCollapsed, setClasifCollapsed] = useState(true)
     const [showClasifModal, setShowClasifModal] = useState(false)
     const [dragActiveId,    setDragActiveId]    = useState(null)
 
