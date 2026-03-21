@@ -332,33 +332,101 @@ function CategoryModal({ categories, onClose, onSaved }) {
     )
 }
 
+// ── Note modal ─────────────────────────────────────────────────────────────────
+
+function NoteModal({ note, onSave, onClose }) {
+    const [val,    setVal]    = useState(note ?? '')
+    const [saving, setSaving] = useState(false)
+
+    async function handleSave() {
+        setSaving(true)
+        try { await onSave(val.trim() || null) } finally { setSaving(false) }
+    }
+
+    async function handleDelete() {
+        setSaving(true)
+        try { await onSave(null) } finally { setSaving(false) }
+    }
+
+    return (
+        <div
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/30"
+            onClick={e => { e.stopPropagation(); onClose() }}>
+            <div
+                className="bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-4 w-72"
+                onClick={e => e.stopPropagation()}>
+                <div className="flex items-center justify-between mb-3">
+                    <span className="text-sm font-semibold text-gray-700 dark:text-gray-200">📝 Nota</span>
+                    <button onClick={onClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 text-lg leading-none">×</button>
+                </div>
+                <textarea
+                    value={val}
+                    onChange={e => setVal(e.target.value.slice(0, 500))}
+                    autoFocus
+                    rows={4}
+                    className="w-full border border-yellow-300 dark:border-yellow-700 rounded-lg p-2 text-sm bg-yellow-50 dark:bg-yellow-900/20 dark:text-gray-200 outline-none focus:border-yellow-400 resize-none"
+                    placeholder="Escribí una nota…"
+                />
+                <div className="flex justify-between items-center mt-1 mb-3">
+                    <span className="text-xs text-gray-300 dark:text-gray-500">{val.length}/500</span>
+                </div>
+                <div className="flex gap-2">
+                    <button onClick={handleSave} disabled={saving}
+                        className="flex-1 bg-gray-900 dark:bg-gray-700 text-white text-sm py-2 rounded-lg hover:bg-gray-700 dark:hover:bg-gray-600 disabled:opacity-40 transition-colors">
+                        Guardar
+                    </button>
+                    {note && (
+                        <button onClick={handleDelete} disabled={saving}
+                            className="px-3 py-2 text-sm text-red-500 hover:text-red-700 border border-red-200 dark:border-red-800 rounded-lg disabled:opacity-40">
+                            Eliminar
+                        </button>
+                    )}
+                    <button onClick={onClose} disabled={saving}
+                        className="px-3 py-2 text-sm text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                        Cancelar
+                    </button>
+                </div>
+            </div>
+        </div>
+    )
+}
+
 // ── Editable cell ─────────────────────────────────────────────────────────────
 
-function EditableCell({ value, color, onSave, isPast, isCurrent }) {
-    const [editing,   setEditing]   = useState(false)
-    const [inputVal,  setInputVal]  = useState('')
-    const [editColor, setEditColor] = useState(null)
-    const inputRef = useRef(null)
+function EditableCell({ value, color, note, entryId, onSave, onSaveNote, isPast, isCurrent }) {
+    const [editing,      setEditing]      = useState(false)
+    const [inputVal,     setInputVal]     = useState('')
+    const [editColor,    setEditColor]    = useState(null)
+    const [noteExpanded, setNoteExpanded] = useState(false)
+    const [noteVal,      setNoteVal]      = useState('')
+    const [noteModal,    setNoteModal]    = useState(false)
+    const [tooltipVis,   setTooltipVis]   = useState(false)
+    const [tooltipPos,   setTooltipPos]   = useState({ top: 0, left: 0 })
+    const inputRef    = useRef(null)
+    const noteRef     = useRef(null)
+    const triangleRef = useRef(null)
 
-    function startEdit() {
+    function startEdit(openNote = false) {
         setInputVal(value > 0 ? String(Math.round(value)) : '')
         setEditColor(color ?? null)
+        setNoteVal(note ?? '')
+        setNoteExpanded(openNote)
         setEditing(true)
     }
 
-    useEffect(() => {
-        if (editing) inputRef.current?.focus()
-    }, [editing])
+    useEffect(() => { if (editing) inputRef.current?.focus() }, [editing])
+    useEffect(() => { if (editing && noteExpanded) noteRef.current?.focus() }, [editing, noteExpanded])
 
     function commit() {
         const n = parseFloat(inputVal.replace(/\./g, '').replace(',', '.')) || 0
-        onSave(n, editColor)
+        onSave(n, editColor, noteVal)
         setEditing(false)
+        setNoteExpanded(false)
     }
 
     function handleKey(e) {
         if (e.key === 'Enter') commit()
-        if (e.key === 'Escape') setEditing(false)
+        if (e.key === 'Escape') { setEditing(false); setNoteExpanded(false) }
     }
 
     function getTextCls() {
@@ -368,7 +436,16 @@ function EditableCell({ value, color, onSave, isPast, isCurrent }) {
         return isPast ? 'text-gray-300 dark:text-gray-600' : value > 0 ? 'text-gray-800 dark:text-gray-200 font-medium' : 'text-gray-300 dark:text-gray-600'
     }
 
-    const cellBg = isCurrent ? 'bg-blue-50 dark:bg-blue-900/20' : isPast ? 'bg-gray-50 dark:bg-gray-800' : ''
+    function showTooltip() {
+        if (triangleRef.current) {
+            const rect = triangleRef.current.getBoundingClientRect()
+            setTooltipPos({ top: rect.bottom + 4, left: Math.max(rect.right - 180, 8) })
+            setTooltipVis(true)
+        }
+    }
+
+    const cellBg  = isCurrent ? 'bg-blue-50 dark:bg-blue-900/20' : isPast ? 'bg-gray-50 dark:bg-gray-800' : ''
+    const hasNote = !!note && value > 0
 
     if (editing) {
         return (
@@ -394,6 +471,32 @@ function EditableCell({ value, color, onSave, isPast, isCurrent }) {
                             />
                         ))}
                     </div>
+                    {noteExpanded ? (
+                        <div className="w-full">
+                            <textarea
+                                ref={noteRef}
+                                value={noteVal}
+                                onChange={e => setNoteVal(e.target.value.slice(0, 500))}
+                                rows={3}
+                                className="w-full text-xs border border-yellow-300 dark:border-yellow-700 rounded p-1 resize-none outline-none bg-yellow-50 dark:bg-yellow-900/20 dark:text-gray-200"
+                                placeholder="Nota…"
+                            />
+                            <div className="flex justify-between">
+                                <span className="text-xs text-gray-300 dark:text-gray-500">{noteVal.length}/500</span>
+                                <button type="button"
+                                    onMouseDown={e => { e.preventDefault(); setNoteExpanded(false) }}
+                                    className="text-xs text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                                    ocultar
+                                </button>
+                            </div>
+                        </div>
+                    ) : (
+                        <button type="button"
+                            onMouseDown={e => { e.preventDefault(); setNoteExpanded(true) }}
+                            className={`text-xs self-end ${noteVal ? 'text-orange-500' : 'text-gray-300 dark:text-gray-600 hover:text-gray-500 dark:hover:text-gray-400'}`}>
+                            📝 {noteVal ? 'Nota ✓' : 'Nota'}
+                        </button>
+                    )}
                 </div>
             </td>
         )
@@ -402,8 +505,38 @@ function EditableCell({ value, color, onSave, isPast, isCurrent }) {
     return (
         <td
             onClick={startEdit}
-            className={`px-2 py-1.5 text-right text-sm whitespace-nowrap tabular-nums group/cell ${cellBg} ${getTextCls()} cursor-pointer hover:bg-blue-50/60 dark:hover:bg-blue-900/10`}
+            className={`px-2 py-1.5 text-right text-sm whitespace-nowrap tabular-nums group/cell relative ${cellBg} ${getTextCls()} cursor-pointer hover:bg-blue-50/60 dark:hover:bg-blue-900/10`}
             style={{ minWidth: W_MONTH }}>
+            {noteModal && entryId && (
+                <NoteModal
+                    note={note}
+                    onSave={async (newNote) => { await onSaveNote(entryId, newNote); setNoteModal(false) }}
+                    onClose={() => setNoteModal(false)}
+                />
+            )}
+            {tooltipVis && hasNote && (
+                <div style={{ position: 'fixed', top: tooltipPos.top, left: tooltipPos.left, zIndex: 9999, maxWidth: 200, pointerEvents: 'none' }}
+                    className="bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-700 rounded shadow text-xs p-2 text-gray-700 dark:text-gray-300 whitespace-pre-wrap break-words">
+                    {note}
+                </div>
+            )}
+            {hasNote && (
+                <div
+                    ref={triangleRef}
+                    onClick={e => { e.stopPropagation(); setTooltipVis(false); setNoteModal(true) }}
+                    onMouseEnter={showTooltip}
+                    onMouseLeave={() => setTooltipVis(false)}
+                    className="absolute top-0 right-0 cursor-pointer"
+                    style={{ width: 12, height: 12 }}>
+                    <div style={{
+                        position: 'absolute', top: 0, right: 0,
+                        width: 0, height: 0,
+                        borderStyle: 'solid',
+                        borderWidth: '0 8px 8px 0',
+                        borderColor: 'transparent #f97316 transparent transparent',
+                    }} />
+                </div>
+            )}
             {value > 0
                 ? `$${fmt(value)}`
                 : <span className="invisible group-hover/cell:visible text-gray-300 text-xs select-none">+</span>
@@ -414,7 +547,7 @@ function EditableCell({ value, color, onSave, isPast, isCurrent }) {
 
 // ── Sortable category row ──────────────────────────────────────────────────────
 
-function SortableCategoryRow({ cat, months, entryMap, handleSave, isPast, isCurrent,
+function SortableCategoryRow({ cat, months, entryMap, handleSave, onSaveNote, isPast, isCurrent,
     clasificaciones, savedClasif, handleClasifChange, clasifW, clasifCollapsed, detailW }) {
     const { attributes, listeners, setNodeRef, isDragging } = useSortable({
         id: cat.id,
@@ -449,7 +582,10 @@ function SortableCategoryRow({ cat, months, entryMap, handleSave, isPast, isCurr
                 <EditableCell key={m}
                     value={entryMap[cat.id]?.[m]?.amount ?? 0}
                     color={entryMap[cat.id]?.[m]?.color ?? null}
-                    onSave={(amount, color) => handleSave(cat.id, m, amount, color)}
+                    note={entryMap[cat.id]?.[m]?.notes ?? ''}
+                    entryId={entryMap[cat.id]?.[m]?.id ?? null}
+                    onSave={(amount, color, note) => handleSave(cat.id, m, amount, color, note)}
+                    onSaveNote={onSaveNote}
                     isPast={isPast(m)} isCurrent={isCurrent(m)} />
             ))}
         </tr>
@@ -508,17 +644,24 @@ export function Flujo() {
 
     useEffect(() => { loadAll() }, [selectedYear])
 
-    async function handleSave(categoryId, month, amount, color) {
-        await api.saveCashflowEntry({ category_id: categoryId, month, year: selectedYear, amount, color: color ?? null, notes: '' })
+    async function handleSave(categoryId, month, amount, color, note) {
+        const existing = entries.find(e => e.category_id === categoryId && e.month === month && e.year === selectedYear)
+        const notesToSave = note !== undefined ? (note ?? '') : (existing?.notes ?? '')
+        const saved = await api.saveCashflowEntry({ category_id: categoryId, month, year: selectedYear, amount, color: color ?? null, notes: notesToSave })
         setEntries(prev => {
             const idx = prev.findIndex(e => e.category_id === categoryId && e.month === month && e.year === selectedYear)
             if (idx >= 0) {
                 const copy = [...prev]
-                copy[idx] = { ...copy[idx], amount, color: color ?? null }
+                copy[idx] = saved
                 return copy
             }
-            return [...prev, { id: Date.now(), category_id: categoryId, month, year: selectedYear, amount, color: color ?? null, notes: '' }]
+            return [...prev, saved]
         })
+    }
+
+    async function handleSaveNote(entryId, note) {
+        await api.updateCashflowEntryNote(entryId, note)
+        setEntries(prev => prev.map(e => e.id === entryId ? { ...e, notes: note ?? '' } : e))
     }
 
     async function handleClasifChange(categoryId, clasificacionId) {
@@ -560,7 +703,7 @@ export function Flujo() {
         const m = {}
         for (const e of entries) {
             if (!m[e.category_id]) m[e.category_id] = {}
-            m[e.category_id][e.month] = { amount: e.amount, color: e.color ?? null }
+            m[e.category_id][e.month] = { id: e.id, amount: e.amount, color: e.color ?? null, notes: e.notes ?? '' }
         }
         return m
     }, [entries])
@@ -743,7 +886,7 @@ export function Flujo() {
                         <SortableContext items={incomeCategories.map(c => c.id)} strategy={verticalListSortingStrategy}>
                             {incomeCategories.map(cat => (
                                 <SortableCategoryRow key={cat.id} cat={cat} months={months}
-                                    entryMap={entryMap} handleSave={handleSave}
+                                    entryMap={entryMap} handleSave={handleSave} onSaveNote={handleSaveNote}
                                     isPast={isPast} isCurrent={isCurrent}
                                     clasificaciones={clasificaciones} savedClasif={savedClasif}
                                     handleClasifChange={handleClasifChange}
@@ -828,7 +971,8 @@ export function Flujo() {
                                     isPast={isPast} isCurrent={isCurrent}
                                     clasificaciones={clasificaciones} savedClasif={savedClasif}
                                     handleClasifChange={handleClasifChange}
-                                    clasifW={clasifW} clasifCollapsed={clasifCollapsed} detailW={detailW} />
+                                    clasifW={clasifW} clasifCollapsed={clasifCollapsed} detailW={detailW}
+                                    onSaveNote={handleSaveNote} />
                             ))}
                         </SortableContext>
 

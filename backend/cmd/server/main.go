@@ -87,6 +87,7 @@ func main() {
 		r.Get("/cashflow/entries", handlers.GetCashflowEntries)
 		r.Post("/cashflow/entries", handlers.SaveCashflowEntry)
 		r.Delete("/cashflow/entries/{id}", handlers.DeleteCashflowEntry)
+		r.Put("/cashflow/entries/{id}/note", handlers.UpdateCashflowEntryNote)
 		r.Get("/cashflow/card-totals", handlers.GetCardTotals)
 
 		// Splits

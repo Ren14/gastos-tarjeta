@@ -123,6 +123,7 @@ export const api = {
     getCashflowEntries: (year) => request(`/cashflow/entries?year=${year}`),
     saveCashflowEntry: (data) => request('/cashflow/entries', { method: 'POST', body: JSON.stringify(data) }),
     deleteCashflowEntry: (id) => request(`/cashflow/entries/${id}`, { method: 'DELETE' }),
+    updateCashflowEntryNote: (id, note) => request(`/cashflow/entries/${id}/note`, { method: 'PUT', body: JSON.stringify({ note }) }),
     getCardTotals: (year) => request(`/cashflow/card-totals?year=${year}`),
 
     // Dashboards

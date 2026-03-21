@@ -216,6 +216,33 @@ func SaveCashflowEntry(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(e)
 }
 
+func UpdateCashflowEntryNote(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.Atoi(chi.URLParam(r, "id"))
+	if err != nil {
+		http.Error(w, "invalid id", http.StatusBadRequest)
+		return
+	}
+	var req struct {
+		Note *string `json:"note"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	var e CashflowEntry
+	err = db.Pool.QueryRow(r.Context(),
+		`UPDATE cashflow_entries SET notes = $1 WHERE id = $2
+		 RETURNING id, category_id, month, year, amount, COALESCE(notes, ''), color`,
+		req.Note, id,
+	).Scan(&e.ID, &e.CategoryID, &e.Month, &e.Year, &e.Amount, &e.Notes, &e.Color)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(e)
+}
+
 func DeleteCashflowEntry(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(chi.URLParam(r, "id"))
 	if err != nil {
