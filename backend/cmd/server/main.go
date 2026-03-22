@@ -38,6 +38,11 @@ func main() {
 		})
 	})
 
+	// Health check
+	r.Get("/health", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+
 	// Public
 	r.Post("/api/v1/auth/login", handlers.Login)
 	r.Post("/telegram/webhook", telegram.WebhookHandler)

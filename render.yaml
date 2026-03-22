@@ -5,6 +5,7 @@ services:
     rootDir: backend
     buildCommand: go build -o server ./cmd/server
     startCommand: ./server
+    healthCheckPath: /health
     envVars:
       - key: DATABASE_URL
         sync: false
