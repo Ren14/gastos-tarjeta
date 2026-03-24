@@ -12,6 +12,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/Ren14/gastos-tarjeta/internal/cron"
 	"github.com/Ren14/gastos-tarjeta/internal/db"
 )
 
@@ -92,6 +93,16 @@ func SetupTelegramWebhook(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(result)
+}
+
+// TriggerDailyCheck manually runs the daily payment reminder job and returns a summary.
+func TriggerDailyCheck(w http.ResponseWriter, r *http.Request) {
+	summary := cron.RunDailyPaymentReminders()
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]interface{}{
+		"sent":   summary.Tomorrow > 0 || summary.Today > 0 || summary.Overdue > 0,
+		"groups": summary,
+	})
 }
 
 func writeAdminJSON(w http.ResponseWriter, body string) {

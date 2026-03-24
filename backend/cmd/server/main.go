@@ -9,6 +9,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/joho/godotenv"
 
+	"github.com/Ren14/gastos-tarjeta/internal/cron"
 	"github.com/Ren14/gastos-tarjeta/internal/db"
 	"github.com/Ren14/gastos-tarjeta/internal/handlers"
 	authmw "github.com/Ren14/gastos-tarjeta/internal/middleware"
@@ -19,6 +20,8 @@ func main() {
 	godotenv.Load()
 	db.Connect()
 	defer db.Pool.Close()
+
+	go cron.StartCronJobs()
 
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
@@ -132,6 +135,7 @@ func main() {
 		r.Post("/admin/import-db", handlers.ImportDB)
 		r.Post("/admin/truncate-db", handlers.TruncateDB)
 		r.Post("/admin/setup-telegram-webhook", handlers.SetupTelegramWebhook)
+		r.Post("/admin/trigger-daily-check", handlers.TriggerDailyCheck)
 	})
 
 	port := os.Getenv("PORT")
