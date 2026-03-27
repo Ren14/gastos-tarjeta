@@ -59,22 +59,7 @@ function CardSpendingTooltip({ active, payload, label, cards, hasPending }) {
     if (!active || !payload?.length) return null
     const monthIdx = MONTH_NAMES.indexOf(label)
     const isEst = monthIdx >= 0 && hasPending[monthIdx]
-
-    // De-duplicate actual/est per card — take first non-null value
-    const cardVals = {}
-    let total = null
-    payload.forEach(p => {
-        if (p.value == null) return
-        const key = p.dataKey
-        if (key === 'total_actual' || key === 'total_est') {
-            if (total === null) total = p.value
-        } else {
-            const m = key.match(/^c(\d+)_/)
-            if (m && cardVals[m[1]] === undefined) {
-                cardVals[m[1]] = p.value
-            }
-        }
-    })
+    const total = payload.reduce((sum, p) => sum + (p.value || 0), 0)
 
     return (
         <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-3 text-xs min-w-[200px]">
@@ -83,22 +68,19 @@ function CardSpendingTooltip({ active, payload, label, cards, hasPending }) {
                 {isEst && <span className="text-orange-500 ml-1.5 font-normal">(estimado)</span>}
             </p>
             {cards.map(card => {
-                const v = cardVals[String(card.card_id)]
-                if (v == null) return null
+                const p = payload.find(x => x.dataKey === `c${card.card_id}`)
+                if (!p?.value) return null
                 return (
                     <div key={card.card_id} className="flex items-center justify-between gap-4 mb-1">
                         <div className="flex items-center gap-1.5 min-w-0">
-                            <span
-                                className="w-2.5 h-2.5 rounded-full flex-shrink-0"
-                                style={{ backgroundColor: card.color_hex || '#888' }}
-                            />
+                            <span className="w-2.5 h-2.5 rounded-sm flex-shrink-0" style={{ backgroundColor: card.color_hex || '#888' }} />
                             <span className="text-gray-500 dark:text-gray-400 truncate">{card.card_name}</span>
                         </div>
-                        <span className="font-medium text-gray-900 dark:text-gray-100 flex-shrink-0">{fmtFull(v)}</span>
+                        <span className="font-medium text-gray-900 dark:text-gray-100 flex-shrink-0">{fmtFull(p.value)}</span>
                     </div>
                 )
             })}
-            {total != null && (
+            {total > 0 && (
                 <div className="flex items-center justify-between gap-4 pt-1.5 mt-1.5 border-t border-gray-200 dark:border-gray-600">
                     <span className="font-bold text-gray-700 dark:text-gray-200">TOTAL</span>
                     <span className="font-bold text-gray-900 dark:text-gray-100">{fmtFull(total)}</span>
@@ -139,7 +121,7 @@ function CashflowTooltip({ active, payload, label }) {
 
 // ── Legend button ──────────────────────────────────────────────────────────────
 
-function LegendButton({ color, label, hidden, onClick, dashed }) {
+function LegendButton({ color, label, hidden, onClick, square }) {
     return (
         <button
             onClick={onClick}
@@ -147,12 +129,10 @@ function LegendButton({ color, label, hidden, onClick, dashed }) {
                 hidden ? 'opacity-30' : ''
             }`}
         >
-            <svg width="20" height="4" className="flex-shrink-0">
-                {dashed
-                    ? <line x1="0" y1="2" x2="20" y2="2" stroke={color} strokeWidth="2" strokeDasharray="4 2" />
-                    : <line x1="0" y1="2" x2="20" y2="2" stroke={color} strokeWidth="2" />
-                }
-            </svg>
+            {square
+                ? <span className="w-3 h-3 rounded-sm flex-shrink-0" style={{ backgroundColor: color }} />
+                : <svg width="20" height="4" className="flex-shrink-0"><line x1="0" y1="2" x2="20" y2="2" stroke={color} strokeWidth="2" /></svg>
+            }
             <span className="text-gray-700 dark:text-gray-300">{label}</span>
         </button>
     )
@@ -187,25 +167,13 @@ export function Dashboards() {
         }).catch(() => setLoading(false))
     }, [year])
 
-    // ── Chart 1 data (solid + dashed series per card) ──────────────────────────
+    // ── Chart 1 data — one value per card per month (null = no spending) ─────────
     const chart1Data = cardSpending
         ? MONTH_NAMES.map((name, i) => {
-            const isEst = cardSpending.has_pending[i]
-            const prevIsEst = i > 0 ? cardSpending.has_pending[i - 1] : false
-            const nextIsEst = i < 11 ? cardSpending.has_pending[i + 1] : false
             const entry = { month: name }
-
-            // actual series: all non-estimated months + first estimated (bridge)
-            const inActual = !isEst || (isEst && !prevIsEst)
-            // est series: all estimated months + last non-estimated (bridge)
-            const inEst = isEst || (!isEst && nextIsEst)
-
-            entry.total_actual = inActual ? cardSpending.total[i] : null
-            entry.total_est    = inEst    ? cardSpending.total[i] : null
-
             cardSpending.by_card.forEach(card => {
-                entry[`c${card.card_id}_actual`] = inActual ? card.values[i] : null
-                entry[`c${card.card_id}_est`]    = inEst    ? card.values[i] : null
+                const v = card.values[i]
+                entry[`c${card.card_id}`] = v > 0 ? v : null
             })
             return entry
         })
@@ -242,45 +210,20 @@ export function Dashboards() {
 
     // ── Card spending legend ────────────────────────────────────────────────────
     const chart1Legend = cardSpending && (
-        <div className="space-y-2">
-            <div className="flex gap-2">
-                <button
-                    onClick={selectAllCards}
-                    className="text-xs px-2.5 py-1 rounded-full border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                >
-                    Seleccionar todos
-                </button>
-                <button
-                    onClick={deselectAllCards}
-                    className="text-xs px-2.5 py-1 rounded-full border border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                >
-                    Deseleccionar todos
-                </button>
-            </div>
-            <div className="flex flex-wrap gap-2">
-                {/* TOTAL — always visible, non-interactive */}
-                <span className="flex items-center gap-1.5 text-xs font-medium px-2 py-1 rounded-full border border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300">
-                    <svg width="20" height="4" className="flex-shrink-0">
-                        <line x1="0" y1="2" x2="20" y2="2" stroke="#111827" strokeWidth="2" />
-                    </svg>
-                    TOTAL
-                </span>
-                {cardSpending.by_card.map(card => (
-                    <LegendButton
-                        key={card.card_id}
-                        color={card.color_hex || '#888'}
-                        label={card.card_name}
-                        hidden={hiddenCard[card.card_id]}
-                        onClick={() => toggleCard(card.card_id)}
-                    />
-                ))}
-                {hasEstimated && (
-                    <span className="flex items-center gap-1 text-xs text-orange-500 px-2 py-1">
-                        <svg width="20" height="4"><line x1="0" y1="2" x2="20" y2="2" stroke="#f97316" strokeWidth="2" strokeDasharray="4 2" /></svg>
-                        estimado
-                    </span>
-                )}
-            </div>
+        <div className="flex flex-wrap items-center gap-2">
+            {cardSpending.by_card.map(card => (
+                <LegendButton
+                    key={card.card_id}
+                    square
+                    color={card.color_hex || '#888'}
+                    label={card.card_name}
+                    hidden={hiddenCard[card.card_id]}
+                    onClick={() => toggleCard(card.card_id)}
+                />
+            ))}
+            {hasEstimated && (
+                <span className="text-xs text-orange-500 px-2 py-1">* estimado</span>
+            )}
         </div>
     )
 
@@ -317,8 +260,8 @@ export function Dashboards() {
                     <div className="h-64 flex items-center justify-center text-gray-400 text-sm">Sin datos</div>
                 ) : (
                     <ResponsiveContainer width="100%" height={280}>
-                        <LineChart data={chart1Data} margin={{ top: 5, right: 16, left: 0, bottom: 5 }}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" className="dark:stroke-gray-700" />
+                        <BarChart data={chart1Data} margin={{ top: 5, right: 16, left: 0, bottom: 5 }} barCategoryGap="20%" barGap={2}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" className="dark:stroke-gray-700" vertical={false} />
                             <XAxis dataKey="month" tick={axisStyle} />
                             <YAxis tickFormatter={fmtAbbrev} tick={axisStyle} width={48} />
                             <Tooltip
@@ -328,52 +271,21 @@ export function Dashboards() {
                                         hasPending={cardSpending.has_pending}
                                     />
                                 }
+                                cursor={{ fill: 'rgba(0,0,0,0.04)' }}
                             />
-                            {/* Total */}
-                            <Line
-                                dataKey="total_actual"
-                                stroke="#111827"
-                                strokeWidth={2.5}
-                                dot={false}
-                                hide={hiddenCard.total}
-                                legendType="none"
-                                isAnimationActive={false}
-                            />
-                            <Line
-                                dataKey="total_est"
-                                stroke="#111827"
-                                strokeWidth={2.5}
-                                strokeDasharray="6 3"
-                                dot={false}
-                                hide={hiddenCard.total}
-                                legendType="none"
-                                isAnimationActive={false}
-                            />
-                            {/* Per-card lines */}
-                            {cardSpending.by_card.flatMap(card => [
-                                <Line
-                                    key={`c${card.card_id}_actual`}
-                                    dataKey={`c${card.card_id}_actual`}
-                                    stroke={card.color_hex || '#888'}
-                                    strokeWidth={1.5}
-                                    dot={false}
+                            {cardSpending.by_card.map(card => (
+                                <Bar
+                                    key={card.card_id}
+                                    dataKey={`c${card.card_id}`}
+                                    name={card.card_name}
+                                    fill={card.color_hex || '#888'}
                                     hide={hiddenCard[card.card_id]}
-                                    legendType="none"
+                                    radius={[3, 3, 0, 0]}
+                                    maxBarSize={32}
                                     isAnimationActive={false}
-                                />,
-                                <Line
-                                    key={`c${card.card_id}_est`}
-                                    dataKey={`c${card.card_id}_est`}
-                                    stroke={card.color_hex || '#888'}
-                                    strokeWidth={1.5}
-                                    strokeDasharray="6 3"
-                                    dot={false}
-                                    hide={hiddenCard[card.card_id]}
-                                    legendType="none"
-                                    isAnimationActive={false}
-                                />,
-                            ])}
-                        </LineChart>
+                                />
+                            ))}
+                        </BarChart>
                     </ResponsiveContainer>
                 )}
             </ChartCard>
