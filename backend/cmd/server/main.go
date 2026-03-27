@@ -131,11 +131,13 @@ func main() {
 		r.Get("/dashboards/savings", handlers.GetSavingsDashboard)
 
 		// USD Savings
-		r.Get("/usd-savings", handlers.GetUsdSavings)
-		r.Post("/usd-savings", handlers.CreateUsdSaving)
-		r.Put("/usd-savings/{id}", handlers.UpdateUsdSaving)
-		r.Delete("/usd-savings/{id}", handlers.DeleteUsdSaving)
-		r.Get("/usd-savings/rate", handlers.GetDolarRate)
+		r.Route("/usd-savings", func(r chi.Router) {
+			r.Get("/", handlers.GetUsdSavings)
+			r.Post("/", handlers.CreateUsdSaving)
+			r.Get("/rate", handlers.GetDolarRate)
+			r.Put("/{id}", handlers.UpdateUsdSaving)
+			r.Delete("/{id}", handlers.DeleteUsdSaving)
+		})
 
 		// Admin
 		r.Post("/admin/export-db", handlers.ExportDB)
