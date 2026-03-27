@@ -131,6 +131,13 @@ export const api = {
     getCashflowDashboard: (year) => request(`/dashboards/cashflow?year=${year}`),
     getSavingsDashboard: (year) => request(`/dashboards/savings?year=${year}`),
 
+    // USD Savings
+    getUsdSavings: () => request('/usd-savings'),
+    createUsdSaving: (data) => request('/usd-savings', { method: 'POST', body: JSON.stringify(data) }),
+    updateUsdSaving: (id, data) => request(`/usd-savings/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+    deleteUsdSaving: (id) => request(`/usd-savings/${id}`, { method: 'DELETE' }),
+    getDolarRate: () => request('/usd-savings/rate'),
+
     // Cobranzas
     getCobranzas: (year) => request(`/cobranzas?year=${year}`),
 

@@ -130,6 +130,13 @@ func main() {
 		r.Get("/dashboards/cashflow", handlers.GetCashflowDashboard)
 		r.Get("/dashboards/savings", handlers.GetSavingsDashboard)
 
+		// USD Savings
+		r.Get("/usd-savings", handlers.GetUsdSavings)
+		r.Post("/usd-savings", handlers.CreateUsdSaving)
+		r.Put("/usd-savings/{id}", handlers.UpdateUsdSaving)
+		r.Delete("/usd-savings/{id}", handlers.DeleteUsdSaving)
+		r.Get("/usd-savings/rate", handlers.GetDolarRate)
+
 		// Admin
 		r.Post("/admin/export-db", handlers.ExportDB)
 		r.Post("/admin/import-db", handlers.ImportDB)

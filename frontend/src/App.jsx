@@ -8,6 +8,7 @@ import { Divisiones } from './pages/Divisiones'
 import { Dashboards } from './pages/Dashboards'
 import { Cobranzas } from './pages/Cobranzas'
 import { TodoTasks } from './pages/TodoTasks'
+import { UsdSavings } from './pages/UsdSavings'
 import { Historial } from './pages/Historial'
 import { Backup } from './pages/Backup'
 import { Login } from './pages/Login'
@@ -23,6 +24,7 @@ const NAV_ITEMS = [
     { id: 'dashboard',  icon: '📊',  label: 'Resumen tarjetas' },
     { id: 'recurring',  icon: '🔁',  label: 'Recurrentes' },
     { id: 'divisiones', icon: '✂️',  label: 'Divisiones' },
+    { id: 'usd-savings', icon: '🏦', label: 'Ahorros USD' },
     { id: 'cotizacion', icon: '💵',  label: 'Cotización USD' },
     { id: 'cards',      icon: '💳',  label: 'Tarjetas' },
     { id: 'categories', icon: '🗂️', label: 'Categorías' },
@@ -240,6 +242,7 @@ function AppContent() {
                     {activeTab === 'divisiones' && <Divisiones />}
                     {activeTab === 'categories' && <div className="md:max-w-lg"><CategoriesPage /></div>}
                     {activeTab === 'cotizacion' && <div className="md:max-w-lg"><CotizacionPage /></div>}
+                    {activeTab === 'usd-savings' && <UsdSavings />}
                     {activeTab === 'historial'  && <Historial />}
                     {activeTab === 'backup'     && <div className="md:max-w-lg"><Backup /></div>}
                 </div>
