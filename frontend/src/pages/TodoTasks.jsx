@@ -30,6 +30,7 @@ function todayStr() {
 // Pill with an invisible date input overlaid — clicking the pill opens the native date picker
 function DueDatePill({ dueDate, done, onChange, savedFlash }) {
     const today = todayStr()
+    const inputRef = useRef(null)
 
     let pillCls, label
     if (!dueDate) {
@@ -52,16 +53,21 @@ function DueDatePill({ dueDate, done, onChange, savedFlash }) {
     return (
         <div className="flex items-center gap-1.5">
             {/* Pill wraps a hidden date input — click pill → native date picker */}
-            <label className={`relative inline-flex items-center text-xs font-medium px-2.5 py-0.5 rounded-full cursor-pointer transition-all select-none ${pillCls}`}>
+            <button
+                type="button"
+                onClick={() => inputRef.current?.showPicker()}
+                className={`relative inline-flex items-center text-xs font-medium px-2.5 py-0.5 rounded-full cursor-pointer transition-all select-none ${pillCls}`}
+            >
                 {label}
                 <input
+                    ref={inputRef}
                     type="date"
                     value={dueDate ?? ''}
                     onChange={onChange}
-                    className="absolute inset-0 opacity-0 cursor-pointer w-full h-full"
+                    className="sr-only"
                     tabIndex={-1}
                 />
-            </label>
+            </button>
             {savedFlash && (
                 <span className="text-xs font-semibold text-green-500 dark:text-green-400">✓</span>
             )}
