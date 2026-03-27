@@ -81,6 +81,8 @@ func WebhookHandler(w http.ResponseWriter, r *http.Request) {
 		reply = handleUltimo(r.Context())
 	case strings.HasPrefix(text, "/cancelar"), strings.HasPrefix(text, "/start"):
 		reply = "✅ Listo, podés registrar gastos cuando quieras.\n\n" + helpHint()
+	case isTodoDueDateMsg(text):
+		reply = handleSetTodoDueDate(r.Context(), text)
 	default:
 		reply = handleExpense(r.Context(), text)
 	}
@@ -99,6 +101,10 @@ func handleHelp() string {
 		"• Zapatillas 90000 3 cuotas AMEX\n" +
 		"• Netflix 8946 1 cuota Visa San Rio\n" +
 		"• Puma 150000 6c Mercado Pago\n\n" +
+		"📅 *Vencimiento de tarjeta (TODO):*\n\n" +
+		"Formato: `Tarjeta dd-mm-aaaa`\n\n" +
+		"*Ejemplo:*\n" +
+		"• Visa 15-04-2026\n\n" +
 		"*Comandos:*\n" +
 		"/tarjetas — ver tarjetas disponibles\n" +
 		"/ultimo — ver últimos 5 gastos\n" +
@@ -270,6 +276,7 @@ func parseAmount(s string) (float64, bool) {
 }
 
 var reNcuotas = regexp.MustCompile(`(?i)^(\d+)[cx]$`)
+var reTodoDueDate = regexp.MustCompile(`^\d{2}-\d{2}-\d{4}$`)
 
 // parseInstallments reads installment info from the start of tokens.
 // Returns installments count and the number of tokens consumed.
@@ -398,6 +405,107 @@ func sendMessage(chatID int64, text string) {
 	if err == nil {
 		resp.Body.Close()
 	}
+}
+
+// ── Todo due date ─────────────────────────────────────────────────────────────
+
+func isTodoDueDateMsg(text string) bool {
+	tokens := strings.Fields(text)
+	return len(tokens) >= 2 && reTodoDueDate.MatchString(tokens[len(tokens)-1])
+}
+
+func handleSetTodoDueDate(ctx context.Context, text string) string {
+	tokens := strings.Fields(text)
+	dateToken := tokens[len(tokens)-1]
+	cardTokens := tokens[:len(tokens)-1]
+
+	// Parse dd-mm-aaaa
+	parts := strings.Split(dateToken, "-")
+	day, _ := strconv.Atoi(parts[0])
+	month, _ := strconv.Atoi(parts[1])
+	year, _ := strconv.Atoi(parts[2])
+	if month < 1 || month > 12 || day < 1 || day > 31 {
+		return "❌ Fecha inválida. Formato: dd-mm-aaaa"
+	}
+	dueDateSQL := fmt.Sprintf("%04d-%02d-%02d", year, month, day)
+
+	// Match card
+	cards, err := loadCards(ctx)
+	if err != nil {
+		return "❌ No se pudieron cargar las tarjetas."
+	}
+	matched, candidates := matchCard(cards, cardTokens)
+	if matched == nil {
+		if len(candidates) > 0 {
+			var names []string
+			for _, c := range candidates {
+				names = append(names, c.Name)
+			}
+			return "❓ Tarjeta ambigua. ¿Cuál querés?\n" + strings.Join(names, "\n")
+		}
+		return "❌ No se encontró la tarjeta. Usá /tarjetas para ver las disponibles."
+	}
+
+	// Compute card amount for this month
+	amount, err := cardMonthAmount(ctx, matched.ID, year, month)
+	if err != nil {
+		return "❌ Error al calcular el monto: " + err.Error()
+	}
+
+	// Upsert todo_task preserving existing amount if already set
+	var taskID int
+	err = db.Pool.QueryRow(ctx,
+		`INSERT INTO todo_tasks (month, year, task_type, reference_id, reference_name, amount, due_date)
+		 VALUES ($1, $2, 'card_payment', $3, $4, $5, $6)
+		 ON CONFLICT (month, year, task_type, reference_id) DO UPDATE
+		   SET due_date = EXCLUDED.due_date,
+		       reference_name = EXCLUDED.reference_name,
+		       amount = CASE WHEN todo_tasks.amount > 0 THEN todo_tasks.amount ELSE EXCLUDED.amount END
+		 RETURNING id`,
+		month, year, matched.ID, matched.Name, amount, dueDateSQL,
+	).Scan(&taskID)
+	if err != nil {
+		return "❌ Error al guardar el vencimiento: " + err.Error()
+	}
+
+	helpers.LogAudit(ctx, "todo_task", taskID, "update",
+		fmt.Sprintf("Vencimiento seteado (Telegram): %s → %02d/%02d/%04d", matched.Name, day, month, year), nil, nil)
+
+	return fmt.Sprintf("✅ Vencimiento de *%s* para %s %d seteado al *%02d/%02d/%04d*",
+		matched.Name, monthNamesES[month-1], year, day, month, year)
+}
+
+func cardMonthAmount(ctx context.Context, cardID, year, month int) (float64, error) {
+	target := time.Date(year, time.Month(month), 1, 0, 0, 0, 0, time.UTC)
+	rows, err := db.Pool.Query(ctx,
+		`SELECT total_amount, installments, purchase_date FROM expenses WHERE card_id = $1`, cardID)
+	if err != nil {
+		return 0, err
+	}
+	defer rows.Close()
+	var total float64
+	for rows.Next() {
+		var amount float64
+		var installments int
+		var purchaseDate time.Time
+		if err := rows.Scan(&amount, &installments, &purchaseDate); err != nil {
+			continue
+		}
+		first := firstImpactMonth(purchaseDate)
+		last := time.Date(first.Year(), first.Month()+time.Month(installments)-1, 1, 0, 0, 0, 0, time.UTC)
+		if !target.Before(first) && !target.After(last) {
+			total += amount / float64(installments)
+		}
+	}
+	return total, nil
+}
+
+func firstImpactMonth(purchaseDate time.Time) time.Time {
+	lastDay := time.Date(purchaseDate.Year(), purchaseDate.Month()+1, 0, 0, 0, 0, 0, purchaseDate.Location())
+	if lastDay.Day()-purchaseDate.Day() < 2 {
+		return time.Date(purchaseDate.Year(), purchaseDate.Month()+2, 1, 0, 0, 0, 0, purchaseDate.Location())
+	}
+	return time.Date(purchaseDate.Year(), purchaseDate.Month()+1, 1, 0, 0, 0, 0, purchaseDate.Location())
 }
 
 // ── Error messages ────────────────────────────────────────────────────────────
