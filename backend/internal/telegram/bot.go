@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/Ren14/gastos-tarjeta/internal/db"
+	"github.com/Ren14/gastos-tarjeta/internal/helpers"
 )
 
 var monthNamesES = []string{"ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"}
@@ -237,6 +238,9 @@ func handleExpense(ctx context.Context, text string) string {
 	if err != nil {
 		return "❌ Error al registrar el gasto: " + err.Error()
 	}
+
+	helpers.LogAudit(ctx, "expense", expID, "create",
+		fmt.Sprintf("Gasto creado (Telegram): %s $%.0f", merchant, amount), nil, nil)
 
 	// Format response
 	impactStr := formatImpactMonths(purchaseDate, installments)
