@@ -143,7 +143,7 @@ function SummaryMatrix({ projection, projLoading, selectedYear, selectedCardId, 
                             const { total, estimated } = monthTotal(month)
                             return (
                                 <td key={i}
-                                    className={`px-3 py-3 text-right text-sm font-bold whitespace-nowrap tabular-nums ${
+                                    className={`px-3 py-3 text-right text-sm font-bold whitespace-nowrap tabular-nums font-mono ${
                                         isCur(month) ? 'bg-gray-800' : 'bg-gray-900'
                                     } ${total > 0 ? (isPast(month) ? 'text-gray-500' : 'text-white') : 'text-gray-700'}`}>
                                     {total > 0 && (
@@ -177,7 +177,7 @@ function SummaryMatrix({ projection, projLoading, selectedYear, selectedCardId, 
                                     const { total, estimated } = cardMonthTotal(month, card.card_id)
                                     return (
                                         <td key={i}
-                                            className={`px-3 py-2.5 text-right text-sm whitespace-nowrap tabular-nums transition-colors ${
+                                            className={`px-3 py-2.5 text-right text-sm whitespace-nowrap tabular-nums font-mono transition-colors ${
                                                 isCur(month)
                                                     ? isSelected ? 'bg-blue-100 dark:bg-blue-900/30' : 'bg-blue-50 dark:bg-blue-900/20 group-hover:bg-blue-100/60'
                                                     : isPast(month) ? 'bg-gray-100 dark:bg-gray-800' : ''
@@ -516,7 +516,7 @@ export function Dashboard() {
                                         style={{ left: W_DATE + W_MERCHANT }} />
                                     {detailMonths.map(({ i, month }) => (
                                         <td key={i}
-                                            className={`px-2 py-3 text-right text-sm font-bold whitespace-nowrap tabular-nums ${
+                                            className={`px-2 py-3 text-right text-sm font-bold whitespace-nowrap tabular-nums font-mono ${
                                                 isCurMonth(month) ? 'bg-gray-800' : 'bg-gray-900'
                                             } ${monthlyTotals[i] > 0 ? (isPastMonth(month) ? 'text-gray-500' : 'text-white') : 'text-gray-700'}`}>
                                             {monthlyTotals[i] > 0 ? `$${fmt(monthlyTotals[i])}` : ''}
@@ -547,7 +547,7 @@ export function Dashboard() {
                                                 const cell = amounts[i]
                                                 return (
                                                 <td key={i}
-                                                    className={`px-2 py-2 text-right text-sm whitespace-nowrap tabular-nums group-hover:bg-orange-50/60 ${
+                                                    className={`px-2 py-2 text-right text-sm whitespace-nowrap tabular-nums font-mono group-hover:bg-orange-50/60 ${
                                                         isCurMonth(month) ? 'bg-blue-50 dark:bg-blue-900/20 group-hover:bg-blue-100/30' : isPastMonth(month) ? 'bg-gray-100/60 dark:bg-gray-800' : ''
                                                     } ${cell.estimated ? 'text-orange-400' : cell.value > 0 ? (isPastMonth(month) ? 'text-gray-400 dark:text-gray-500 font-medium' : 'text-gray-800 dark:text-gray-200 font-medium') : ''}`}>
                                                     {cell.value > 0 ? `${cell.estimated ? '~' : ''}$${fmt(cell.value)}` : ''}
@@ -630,7 +630,7 @@ export function Dashboard() {
                                                 return (
                                                     <td key={i}
                                                         onClick={() => startEdit(e, i)}
-                                                        className={`px-2 py-2 text-right text-sm whitespace-nowrap tabular-nums cursor-pointer group-hover:bg-gray-100 dark:group-hover:bg-gray-700 group/cell ${
+                                                        className={`px-2 py-2 text-right text-sm whitespace-nowrap tabular-nums font-mono cursor-pointer group-hover:bg-gray-100 dark:group-hover:bg-gray-700 group/cell ${
                                                             isCurMonth(month) ? 'bg-blue-50 dark:bg-blue-900/20 group-hover:bg-blue-100/50' : isPastMonth(month) ? 'bg-gray-100/60 dark:bg-gray-800' : ''
                                                         } ${amount > 0 ? getAmountTextClass(e, i) : ''}`}>
                                                         {amount > 0

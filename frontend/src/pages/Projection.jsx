@@ -155,7 +155,7 @@ export function Projection({ onNavigateToDashboard }) {
                                     return (
                                         <td key={m}
                                             onClick={() => total > 0 && onNavigateToDashboard(m, selectedYear)}
-                                            className={`px-3 py-2.5 text-right text-sm whitespace-nowrap transition-colors ${
+                                            className={`px-3 py-2.5 text-right text-sm whitespace-nowrap font-mono transition-colors ${
                                                 current
                                                     ? 'bg-blue-50 group-hover:bg-blue-100/60'
                                                     : 'group-hover:bg-gray-50'

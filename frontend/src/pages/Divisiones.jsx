@@ -184,7 +184,7 @@ function SplitMatrix({ splitId, onBack }) {
                                                         : 'bg-white dark:bg-gray-900')
                                             }`}>
                                             <div className="flex flex-col items-center gap-0.5">
-                                                <span className={`text-xs font-bold tabular-nums ${
+                                                <span className={`text-xs font-bold tabular-nums font-mono ${
                                                     m.is_estimated
                                                         ? 'text-orange-500 dark:text-orange-400'
                                                         : past
@@ -194,7 +194,7 @@ function SplitMatrix({ splitId, onBack }) {
                                                     {m.is_estimated ? '~' : ''}${fmt(m.per_person_ars)}
                                                 </span>
                                                 {m.per_person_usd != null && (
-                                                    <span className="text-[10px] text-green-600 dark:text-green-400 tabular-nums">
+                                                    <span className="text-[10px] text-green-600 dark:text-green-400 tabular-nums font-mono">
                                                         (${m.per_person_usd.toFixed(2)})
                                                     </span>
                                                 )}
@@ -222,13 +222,13 @@ function SplitMatrix({ splitId, onBack }) {
                             {displayMonths.map(m => (
                                 <td key={m.month} className="px-3 py-2.5 text-center bg-gray-900">
                                     <div className="flex flex-col items-center gap-0.5">
-                                        <span className={`text-xs font-bold tabular-nums ${
+                                        <span className={`text-xs font-bold tabular-nums font-mono ${
                                             m.is_estimated ? 'text-orange-300' : 'text-white'
                                         }`}>
                                             {m.is_estimated ? '~' : ''}${fmt(m.amount_ars)}
                                         </span>
                                         {m.amount_usd != null && (
-                                            <span className="text-[10px] text-green-400 tabular-nums">
+                                            <span className="text-[10px] text-green-400 tabular-nums font-mono">
                                                 (${m.amount_usd.toFixed(2)})
                                             </span>
                                         )}

@@ -63,7 +63,7 @@ function ClassificationMatrix({ group, months, isPast, isCurrent }) {
                                     const cur  = isCurrent(m)
                                     return (
                                         <td key={m}
-                                            className={`px-3 py-2 text-right text-sm whitespace-nowrap tabular-nums ${
+                                            className={`px-3 py-2 text-right text-sm whitespace-nowrap tabular-nums font-mono ${
                                                 cur  ? 'bg-blue-50 dark:bg-blue-900/20' :
                                                 past ? 'bg-gray-50 dark:bg-gray-800' : ''
                                             } ${val > 0
@@ -92,7 +92,7 @@ function ClassificationMatrix({ group, months, isPast, isCurrent }) {
                                 const cur  = isCurrent(m)
                                 return (
                                     <td key={m}
-                                        className={`px-3 py-2.5 text-right text-sm font-bold whitespace-nowrap tabular-nums ${
+                                        className={`px-3 py-2.5 text-right text-sm font-bold whitespace-nowrap tabular-nums font-mono ${
                                             cur  ? 'bg-blue-100/50 dark:bg-blue-900/30' :
                                             past ? 'bg-gray-100 dark:bg-gray-800'       : 'bg-gray-50 dark:bg-gray-800/60'
                                         } ${val > 0
