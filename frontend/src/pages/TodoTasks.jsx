@@ -301,9 +301,11 @@ function TaskRow({ task, onComplete, onUncomplete, onDueDateChange, onMPReserved
     )
 }
 
-function Section({ title, tasks, icon, onComplete, onUncomplete, onDueDateChange, onMPReservedChange, onPaymentInformedChange, completing }) {
+function Section({ title, tasks, icon, kpiLabel, onComplete, onUncomplete, onDueDateChange, onMPReservedChange, onPaymentInformedChange, completing }) {
     if (tasks.length === 0) return null
-    const doneCount = tasks.filter(t => !!t.completed_at).length
+    const doneCount    = tasks.filter(t => !!t.completed_at).length
+    const pendingTotal = tasks.filter(t => !t.completed_at).reduce((s, t) => s + t.amount, 0)
+    const allDone      = doneCount === tasks.length
     return (
         <div className="mb-5">
             <div className="flex items-center gap-2 mb-2 px-1">
@@ -311,8 +313,15 @@ function Section({ title, tasks, icon, onComplete, onUncomplete, onDueDateChange
                 <h2 className="text-xs font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
                     {title}
                 </h2>
-                <span className="ml-auto text-xs text-gray-400 dark:text-gray-500">
-                    {doneCount}/{tasks.length}
+                <span className="ml-auto flex items-center gap-2">
+                    {!allDone && (
+                        <span className="text-xs font-semibold tabular-nums text-gray-700 dark:text-gray-300">
+                            {kpiLabel} <span className="font-bold">${fmt(pendingTotal)}</span>
+                        </span>
+                    )}
+                    <span className="text-xs text-gray-400 dark:text-gray-500">
+                        {doneCount}/{tasks.length}
+                    </span>
                 </span>
             </div>
             <div className="rounded-2xl border border-gray-100 dark:border-gray-700/60 overflow-hidden shadow-sm divide-y divide-gray-100 dark:divide-gray-700/40">
@@ -525,6 +534,7 @@ export function TodoTasks() {
                     <Section
                         title="Pagos de tarjetas"
                         icon="💳"
+                        kpiLabel="A pagar:"
                         tasks={cardTasks}
                         onComplete={handleComplete}
                         onUncomplete={handleUncomplete}
@@ -535,6 +545,7 @@ export function TodoTasks() {
                     <Section
                         title="Cobranzas"
                         icon="🧾"
+                        kpiLabel="A cobrar:"
                         tasks={cobranzaTasks}
                         onComplete={handleComplete}
                         onUncomplete={handleUncomplete}
