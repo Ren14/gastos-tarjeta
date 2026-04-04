@@ -146,6 +146,7 @@ export const api = {
     completeTodo: (data) => request('/todos/complete', { method: 'POST', body: JSON.stringify(data) }),
     uncompleteTodo: (data) => request('/todos/uncomplete', { method: 'POST', body: JSON.stringify(data) }),
     updateTodoDueDate: (data) => request('/todos/due-date', { method: 'PUT', body: JSON.stringify(data) }),
+    updateTodoMPReserved: (data) => request('/todos/mp-reserved', { method: 'PUT', body: JSON.stringify(data) }),
 
     // Audit log
     getAuditLog: (limit = 50, offset = 0, entityType = '') => {

@@ -85,9 +85,10 @@ function ColorDot({ hex }) {
     )
 }
 
-function TaskRow({ task, onComplete, onUncomplete, onDueDateChange, completing }) {
-    const [confirmUncheck, setConfirmUncheck] = useState(false)
-    const [savedFlash,     setSavedFlash]     = useState(false)
+function TaskRow({ task, onComplete, onUncomplete, onDueDateChange, onMPReservedChange, completing }) {
+    const [confirmUncheck,   setConfirmUncheck]   = useState(false)
+    const [confirmUnreserve, setConfirmUnreserve] = useState(false)
+    const [savedFlash,       setSavedFlash]       = useState(false)
     const flashTimer = useRef(null)
     const done   = !!task.completed_at
     const isCard = task.task_type === 'card_payment'
@@ -95,6 +96,11 @@ function TaskRow({ task, onComplete, onUncomplete, onDueDateChange, completing }
     function handleCheck() {
         if (done) setConfirmUncheck(true)
         else onComplete(task)
+    }
+
+    function handleMPReservedClick() {
+        if (task.mp_reserved) setConfirmUnreserve(true)
+        else onMPReservedChange(task, true)
     }
 
     function handleDueDateChange(e) {
@@ -145,9 +151,14 @@ function TaskRow({ task, onComplete, onUncomplete, onDueDateChange, completing }
                         Pagado el {fmtTs(task.completed_at)}
                     </p>
                 )}
+                {isCard && task.mp_reserved && (
+                    <p className="text-xs text-blue-500 dark:text-blue-400 mt-0.5 font-medium">
+                        💙 Reservado en MP
+                    </p>
+                )}
             </div>
 
-            {/* Right side: amount + due date pill */}
+            {/* Right side: amount + due date pill + MP reserved toggle */}
             <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
                 <span className={`text-sm font-bold tabular-nums ${
                     done ? 'text-gray-400 dark:text-gray-500' : 'text-gray-900 dark:text-gray-100'
@@ -161,6 +172,20 @@ function TaskRow({ task, onComplete, onUncomplete, onDueDateChange, completing }
                         onChange={handleDueDateChange}
                         savedFlash={savedFlash}
                     />
+                )}
+                {isCard && (
+                    <button
+                        type="button"
+                        onClick={handleMPReservedClick}
+                        title={task.mp_reserved ? 'Quitar reserva de Mercado Pago' : 'Marcar como reservado en Mercado Pago'}
+                        className={`inline-flex items-center gap-1 text-xs font-medium px-2.5 py-0.5 rounded-full border transition-all select-none ${
+                            task.mp_reserved
+                                ? 'bg-blue-50 dark:bg-blue-900/30 border-blue-300 dark:border-blue-700 text-blue-600 dark:text-blue-400'
+                                : 'border-dashed border-gray-300 dark:border-gray-600 text-gray-400 dark:text-gray-500 hover:border-blue-400 dark:hover:border-blue-500 hover:text-blue-500 dark:hover:text-blue-400'
+                        }`}
+                    >
+                        {task.mp_reserved ? '💙 MP' : '+ MP'}
+                    </button>
                 )}
             </div>
 
@@ -191,11 +216,39 @@ function TaskRow({ task, onComplete, onUncomplete, onDueDateChange, completing }
                     </div>
                 </div>
             )}
+
+            {/* Unreserve MP confirmation modal */}
+            {confirmUnreserve && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+                    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6 max-w-sm w-full">
+                        <h3 className="text-base font-bold text-gray-900 dark:text-gray-100 mb-2">
+                            ¿Quitar reserva de Mercado Pago?
+                        </h3>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-5">
+                            Se va a quitar la reserva en MP de <strong>{task.reference_name}</strong>.
+                        </p>
+                        <div className="flex gap-3 justify-end">
+                            <button
+                                onClick={() => setConfirmUnreserve(false)}
+                                className="px-4 py-2 text-sm rounded-xl bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={() => { setConfirmUnreserve(false); onMPReservedChange(task, false) }}
+                                className="px-4 py-2 text-sm rounded-xl bg-red-500 text-white hover:bg-red-600 transition-colors"
+                            >
+                                Quitar reserva
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }
 
-function Section({ title, tasks, icon, onComplete, onUncomplete, onDueDateChange, completing }) {
+function Section({ title, tasks, icon, onComplete, onUncomplete, onDueDateChange, onMPReservedChange, completing }) {
     if (tasks.length === 0) return null
     const doneCount = tasks.filter(t => !!t.completed_at).length
     return (
@@ -217,6 +270,7 @@ function Section({ title, tasks, icon, onComplete, onUncomplete, onDueDateChange
                         onComplete={onComplete}
                         onUncomplete={onUncomplete}
                         onDueDateChange={onDueDateChange}
+                        onMPReservedChange={onMPReservedChange}
                         completing={completing}
                     />
                 ))}
@@ -287,6 +341,24 @@ export function TodoTasks() {
             ))
         } finally {
             setCompleting(false)
+        }
+    }
+
+    async function handleMPReservedChange(task, value) {
+        setTasks(prev => prev.map(t =>
+            t.task_type === task.task_type && t.reference_id === task.reference_id
+                ? { ...t, mp_reserved: value }
+                : t
+        ))
+        try {
+            await api.updateTodoMPReserved({
+                month: task.month, year: task.year,
+                task_type: task.task_type, reference_id: task.reference_id,
+                reference_name: task.reference_name, amount: task.amount,
+                mp_reserved: value,
+            })
+        } catch {
+            load(month, year)
         }
     }
 
@@ -385,6 +457,7 @@ export function TodoTasks() {
                         onComplete={handleComplete}
                         onUncomplete={handleUncomplete}
                         onDueDateChange={handleDueDateChange}
+                        onMPReservedChange={handleMPReservedChange}
                         completing={completing}
                     />
                     <Section
