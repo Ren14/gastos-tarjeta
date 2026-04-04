@@ -21,7 +21,8 @@ type TodoTask struct {
 	ColorHex      string     `json:"color_hex"`
 	CompletedAt   *time.Time `json:"completed_at"`
 	DueDate       *string    `json:"due_date"` // "YYYY-MM-DD" or null
-	MPReserved    bool       `json:"mp_reserved"`
+	MPReserved      bool       `json:"mp_reserved"`
+	PaymentInformed bool       `json:"payment_informed"`
 }
 
 // scanDueDate converts a scanned *time.Time DATE into a *string ("YYYY-MM-DD").
@@ -172,7 +173,7 @@ func GetTodos(w http.ResponseWriter, r *http.Request) {
 	persisted := map[persistedKey]*TodoTask{}
 
 	dbRows, err := db.Pool.Query(r.Context(),
-		`SELECT id, task_type, reference_id, reference_name, amount, completed_at, due_date, mp_reserved
+		`SELECT id, task_type, reference_id, reference_name, amount, completed_at, due_date, mp_reserved, payment_informed
 		 FROM todo_tasks WHERE month = $1 AND year = $2`, month, year)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -184,7 +185,7 @@ func GetTodos(w http.ResponseWriter, r *http.Request) {
 		var t TodoTask
 		var id int
 		var dueDateT *time.Time
-		dbRows.Scan(&id, &t.TaskType, &t.ReferenceID, &t.ReferenceName, &t.Amount, &t.CompletedAt, &dueDateT, &t.MPReserved)
+		dbRows.Scan(&id, &t.TaskType, &t.ReferenceID, &t.ReferenceName, &t.Amount, &t.CompletedAt, &dueDateT, &t.MPReserved, &t.PaymentInformed)
 		t.ID = &id
 		t.Month = month
 		t.Year = year
@@ -238,6 +239,7 @@ func GetTodos(w http.ResponseWriter, r *http.Request) {
 		if p, ok := persisted[persistedKey{"cobranza", g.ClasifID}]; ok {
 			task.ID = p.ID
 			task.CompletedAt = p.CompletedAt
+			task.PaymentInformed = p.PaymentInformed
 		}
 		cobranzaTasks = append(cobranzaTasks, task)
 	}
@@ -352,6 +354,38 @@ func UpdateTodoMPReserved(w http.ResponseWriter, r *http.Request) {
 		       reference_name = EXCLUDED.reference_name,
 		       amount = EXCLUDED.amount`,
 		req.Month, req.Year, req.TaskType, req.ReferenceID, req.ReferenceName, req.Amount, req.MPReserved,
+	)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func UpdateTodoPaymentInformed(w http.ResponseWriter, r *http.Request) {
+	var req struct {
+		Month           int     `json:"month"`
+		Year            int     `json:"year"`
+		TaskType        string  `json:"task_type"`
+		ReferenceID     int     `json:"reference_id"`
+		ReferenceName   string  `json:"reference_name"`
+		Amount          float64 `json:"amount"`
+		PaymentInformed bool    `json:"payment_informed"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	_, err := db.Pool.Exec(r.Context(),
+		`INSERT INTO todo_tasks (month, year, task_type, reference_id, reference_name, amount, payment_informed)
+		 VALUES ($1, $2, $3, $4, $5, $6, $7)
+		 ON CONFLICT (month, year, task_type, reference_id) DO UPDATE
+		   SET payment_informed = EXCLUDED.payment_informed,
+		       reference_name = EXCLUDED.reference_name,
+		       amount = EXCLUDED.amount`,
+		req.Month, req.Year, req.TaskType, req.ReferenceID, req.ReferenceName, req.Amount, req.PaymentInformed,
 	)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)

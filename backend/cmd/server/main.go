@@ -125,6 +125,7 @@ func main() {
 		r.Post("/todos/uncomplete", handlers.UncompleteTodo)
 		r.Put("/todos/due-date", handlers.UpdateTodoDueDate)
 		r.Put("/todos/mp-reserved", handlers.UpdateTodoMPReserved)
+		r.Put("/todos/payment-informed", handlers.UpdateTodoPaymentInformed)
 
 		// Dashboards
 		r.Get("/dashboards/card-spending", handlers.GetCardSpending)

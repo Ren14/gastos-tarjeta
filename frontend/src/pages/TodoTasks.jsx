@@ -85,9 +85,10 @@ function ColorDot({ hex }) {
     )
 }
 
-function TaskRow({ task, onComplete, onUncomplete, onDueDateChange, onMPReservedChange, completing }) {
+function TaskRow({ task, onComplete, onUncomplete, onDueDateChange, onMPReservedChange, onPaymentInformedChange, completing }) {
     const [confirmUncheck,   setConfirmUncheck]   = useState(false)
     const [confirmUnreserve, setConfirmUnreserve] = useState(false)
+    const [confirmUninform,  setConfirmUninform]  = useState(false)
     const [savedFlash,       setSavedFlash]       = useState(false)
     const flashTimer = useRef(null)
     const done   = !!task.completed_at
@@ -101,6 +102,11 @@ function TaskRow({ task, onComplete, onUncomplete, onDueDateChange, onMPReserved
     function handleMPReservedClick() {
         if (task.mp_reserved) setConfirmUnreserve(true)
         else onMPReservedChange(task, true)
+    }
+
+    function handlePaymentInformedClick() {
+        if (task.payment_informed) setConfirmUninform(true)
+        else onPaymentInformedChange(task, true)
     }
 
     function handleDueDateChange(e) {
@@ -156,6 +162,11 @@ function TaskRow({ task, onComplete, onUncomplete, onDueDateChange, onMPReserved
                         💙 Reservado en MP
                     </p>
                 )}
+                {!isCard && task.payment_informed && (
+                    <p className="text-xs text-emerald-500 dark:text-emerald-400 mt-0.5 font-medium">
+                        ✅ Pago informado
+                    </p>
+                )}
             </div>
 
             {/* Right side: amount + due date pill + MP reserved toggle */}
@@ -187,6 +198,20 @@ function TaskRow({ task, onComplete, onUncomplete, onDueDateChange, onMPReserved
                         {task.mp_reserved ? '💙 MP' : '+ MP'}
                     </button>
                 )}
+                {!isCard && (
+                    <button
+                        type="button"
+                        onClick={handlePaymentInformedClick}
+                        title={task.payment_informed ? 'Quitar marca de pago informado' : 'Marcar como pago informado'}
+                        className={`inline-flex items-center gap-1 text-xs font-medium px-2.5 py-0.5 rounded-full border transition-all select-none ${
+                            task.payment_informed
+                                ? 'bg-emerald-50 dark:bg-emerald-900/30 border-emerald-300 dark:border-emerald-700 text-emerald-600 dark:text-emerald-400'
+                                : 'border-dashed border-gray-300 dark:border-gray-600 text-gray-400 dark:text-gray-500 hover:border-emerald-400 dark:hover:border-emerald-500 hover:text-emerald-500 dark:hover:text-emerald-400'
+                        }`}
+                    >
+                        {task.payment_informed ? '✅ Informado' : '+ Informar'}
+                    </button>
+                )}
             </div>
 
             {/* Uncheck confirmation modal */}
@@ -211,6 +236,34 @@ function TaskRow({ task, onComplete, onUncomplete, onDueDateChange, onMPReserved
                                 className="px-4 py-2 text-sm rounded-xl bg-red-500 text-white hover:bg-red-600 transition-colors"
                             >
                                 Desmarcar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Uninform payment confirmation modal */}
+            {confirmUninform && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+                    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6 max-w-sm w-full">
+                        <h3 className="text-base font-bold text-gray-900 dark:text-gray-100 mb-2">
+                            ¿Quitar marca de pago informado?
+                        </h3>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mb-5">
+                            Se va a quitar la marca de pago informado de <strong>{task.reference_name}</strong>.
+                        </p>
+                        <div className="flex gap-3 justify-end">
+                            <button
+                                onClick={() => setConfirmUninform(false)}
+                                className="px-4 py-2 text-sm rounded-xl bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+                            >
+                                Cancelar
+                            </button>
+                            <button
+                                onClick={() => { setConfirmUninform(false); onPaymentInformedChange(task, false) }}
+                                className="px-4 py-2 text-sm rounded-xl bg-red-500 text-white hover:bg-red-600 transition-colors"
+                            >
+                                Quitar
                             </button>
                         </div>
                     </div>
@@ -248,7 +301,7 @@ function TaskRow({ task, onComplete, onUncomplete, onDueDateChange, onMPReserved
     )
 }
 
-function Section({ title, tasks, icon, onComplete, onUncomplete, onDueDateChange, onMPReservedChange, completing }) {
+function Section({ title, tasks, icon, onComplete, onUncomplete, onDueDateChange, onMPReservedChange, onPaymentInformedChange, completing }) {
     if (tasks.length === 0) return null
     const doneCount = tasks.filter(t => !!t.completed_at).length
     return (
@@ -271,6 +324,7 @@ function Section({ title, tasks, icon, onComplete, onUncomplete, onDueDateChange
                         onUncomplete={onUncomplete}
                         onDueDateChange={onDueDateChange}
                         onMPReservedChange={onMPReservedChange}
+                        onPaymentInformedChange={onPaymentInformedChange}
                         completing={completing}
                     />
                 ))}
@@ -341,6 +395,24 @@ export function TodoTasks() {
             ))
         } finally {
             setCompleting(false)
+        }
+    }
+
+    async function handlePaymentInformedChange(task, value) {
+        setTasks(prev => prev.map(t =>
+            t.task_type === task.task_type && t.reference_id === task.reference_id
+                ? { ...t, payment_informed: value }
+                : t
+        ))
+        try {
+            await api.updateTodoPaymentInformed({
+                month: task.month, year: task.year,
+                task_type: task.task_type, reference_id: task.reference_id,
+                reference_name: task.reference_name, amount: task.amount,
+                payment_informed: value,
+            })
+        } catch {
+            load(month, year)
         }
     }
 
@@ -467,6 +539,7 @@ export function TodoTasks() {
                         onComplete={handleComplete}
                         onUncomplete={handleUncomplete}
                         onDueDateChange={handleDueDateChange}
+                        onPaymentInformedChange={handlePaymentInformedChange}
                         completing={completing}
                     />
                 </>
