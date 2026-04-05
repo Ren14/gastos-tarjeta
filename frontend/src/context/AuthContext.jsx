@@ -13,11 +13,11 @@ export function AuthProvider({ children }) {
         return saved
     })
 
-    async function login(username, password, remember = false) {
+    async function login(email, password, remember = false) {
         const res = await fetch(`${BASE_URL}/auth/login`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username, password }),
+            body: JSON.stringify({ email, password }),
         })
         const data = await res.json().catch(() => ({}))
         if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`)
@@ -29,6 +29,17 @@ export function AuthProvider({ children }) {
         return data
     }
 
+    async function register(email, displayName, password) {
+        const res = await fetch(`${BASE_URL}/auth/register`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, display_name: displayName, password }),
+        })
+        const data = await res.json().catch(() => ({}))
+        if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`)
+        return data
+    }
+
     function logout() {
         localStorage.removeItem(STORAGE_KEY)
         setTokenState(null)
@@ -36,7 +47,7 @@ export function AuthProvider({ children }) {
     }
 
     return (
-        <AuthContext.Provider value={{ token, login, logout }}>
+        <AuthContext.Provider value={{ token, login, register, logout }}>
             {children}
         </AuthContext.Provider>
     )

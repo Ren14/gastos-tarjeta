@@ -12,6 +12,7 @@ import { UsdSavings } from './pages/UsdSavings'
 import { Historial } from './pages/Historial'
 import { Backup } from './pages/Backup'
 import { Login } from './pages/Login'
+import { Register } from './pages/Register'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { setOnUnauthorized } from './api/client'
 
@@ -52,10 +53,14 @@ function AppContent() {
     const [drawerOpen,       setDrawerOpen]       = useState(false)
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
     const [savedCount,       setSavedCount]       = useState(0)
+    const [showRegister,     setShowRegister]     = useState(false)
 
     setOnUnauthorized(logout)
 
-    if (!token) return <Login />
+    if (!token) {
+        if (showRegister) return <Register onShowLogin={() => setShowRegister(false)} />
+        return <Login onShowRegister={() => setShowRegister(true)} />
+    }
 
     function navigate(tab) {
         setActiveTab(tab)
