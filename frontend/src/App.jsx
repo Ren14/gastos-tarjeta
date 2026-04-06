@@ -55,17 +55,18 @@ function AppContent() {
     const [drawerOpen,       setDrawerOpen]       = useState(false)
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
     const [savedCount,       setSavedCount]       = useState(0)
-    const [showRegister,      setShowRegister]      = useState(false)
+    const [showRegister,       setShowRegister]       = useState(false)
     const [showForgotPassword, setShowForgotPassword] = useState(false)
-
-    // Detect reset-password token in URL
-    const resetToken = new URLSearchParams(window.location.search).get('token')
+    const [resetToken,         setResetToken]         = useState(
+        () => new URLSearchParams(window.location.search).get('token')
+    )
 
     setOnUnauthorized(logout)
 
     if (!token) {
         if (resetToken) return <ResetPassword token={resetToken} onShowLogin={() => {
             window.history.replaceState(null, '', '/')
+            setResetToken(null)
         }} />
         if (showForgotPassword) return <ForgotPassword onShowLogin={() => setShowForgotPassword(false)} />
         if (showRegister) return <Register onShowLogin={() => setShowRegister(false)} />
