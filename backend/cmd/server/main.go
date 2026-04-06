@@ -49,6 +49,8 @@ func main() {
 	// Public
 	r.Post("/api/v1/auth/login", handlers.Login)
 	r.Post("/api/v1/auth/register", handlers.Register)
+	r.Post("/api/v1/auth/forgot-password", handlers.RequestPasswordReset)
+	r.Post("/api/v1/auth/reset-password", handlers.ResetPassword)
 	r.Post("/telegram/webhook", telegram.WebhookHandler)
 
 	r.Route("/api/v1", func(r chi.Router) {

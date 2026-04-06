@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 
-export function Login({ onShowRegister }) {
+export function Login({ onShowRegister, onShowForgotPassword }) {
     const { login } = useAuth()
     const [email,    setEmail]    = useState('')
     const [password, setPassword] = useState('')
@@ -47,9 +47,18 @@ export function Login({ onShowRegister }) {
                     </div>
 
                     <div>
-                        <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1.5">
-                            Contraseña
-                        </label>
+                        <div className="flex items-center justify-between mb-1.5">
+                            <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wide">
+                                Contraseña
+                            </label>
+                            <button
+                                type="button"
+                                onClick={onShowForgotPassword}
+                                className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 hover:underline"
+                            >
+                                ¿Olvidaste tu contraseña?
+                            </button>
+                        </div>
                         <input
                             type="password"
                             value={password}

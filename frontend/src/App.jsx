@@ -13,6 +13,8 @@ import { Historial } from './pages/Historial'
 import { Backup } from './pages/Backup'
 import { Login } from './pages/Login'
 import { Register } from './pages/Register'
+import { ForgotPassword } from './pages/ForgotPassword'
+import { ResetPassword } from './pages/ResetPassword'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { setOnUnauthorized } from './api/client'
 
@@ -53,13 +55,24 @@ function AppContent() {
     const [drawerOpen,       setDrawerOpen]       = useState(false)
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
     const [savedCount,       setSavedCount]       = useState(0)
-    const [showRegister,     setShowRegister]     = useState(false)
+    const [showRegister,      setShowRegister]      = useState(false)
+    const [showForgotPassword, setShowForgotPassword] = useState(false)
+
+    // Detect reset-password token in URL
+    const resetToken = new URLSearchParams(window.location.search).get('token')
 
     setOnUnauthorized(logout)
 
     if (!token) {
+        if (resetToken) return <ResetPassword token={resetToken} onShowLogin={() => {
+            window.history.replaceState(null, '', '/')
+        }} />
+        if (showForgotPassword) return <ForgotPassword onShowLogin={() => setShowForgotPassword(false)} />
         if (showRegister) return <Register onShowLogin={() => setShowRegister(false)} />
-        return <Login onShowRegister={() => setShowRegister(true)} />
+        return <Login
+            onShowRegister={() => setShowRegister(true)}
+            onShowForgotPassword={() => setShowForgotPassword(true)}
+        />
     }
 
     function navigate(tab) {
