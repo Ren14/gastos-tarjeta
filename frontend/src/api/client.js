@@ -149,6 +149,10 @@ export const api = {
     updateTodoMPReserved: (data) => request('/todos/mp-reserved', { method: 'PUT', body: JSON.stringify(data) }),
     updateTodoPaymentInformed: (data) => request('/todos/payment-informed', { method: 'PUT', body: JSON.stringify(data) }),
 
+    // Profile
+    getMe: () => request('/me'),
+    updateMe: (data) => request('/me', { method: 'PUT', body: JSON.stringify(data) }),
+
     // Audit log
     getAuditLog: (limit = 50, offset = 0, entityType = '') => {
         const params = new URLSearchParams({ limit, offset })

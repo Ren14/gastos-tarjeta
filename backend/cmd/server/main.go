@@ -144,6 +144,10 @@ func main() {
 			r.Delete("/{id}", handlers.DeleteUsdSaving)
 		})
 
+		// Profile
+		r.Get("/me", handlers.GetMe)
+		r.Put("/me", handlers.UpdateMe)
+
 		// Admin
 		r.Post("/admin/export-db", handlers.ExportDB)
 		r.Post("/admin/import-db", handlers.ImportDB)

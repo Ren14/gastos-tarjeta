@@ -13,6 +13,7 @@ import (
 
 	"github.com/Ren14/gastos-tarjeta/internal/db"
 	"github.com/Ren14/gastos-tarjeta/internal/email"
+	"github.com/Ren14/gastos-tarjeta/internal/middleware"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/jackc/pgx/v5"
 	"golang.org/x/crypto/bcrypt"
@@ -79,6 +80,11 @@ func Login(w http.ResponseWriter, r *http.Request) {
 }
 
 func Register(w http.ResponseWriter, r *http.Request) {
+	if os.Getenv("ALLOW_REGISTRATION") != "true" {
+		jsonError(w, "El registro de nuevos usuarios está deshabilitado", http.StatusForbidden)
+		return
+	}
+
 	var req registerRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		jsonError(w, "invalid request body", http.StatusBadRequest)
@@ -259,6 +265,98 @@ func ResetPassword(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{
 		"message": "Contraseña actualizada correctamente.",
 	})
+}
+
+func GetMe(w http.ResponseWriter, r *http.Request) {
+	userID, ok := middleware.UserIDFromContext(r.Context())
+	if !ok {
+		jsonError(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	var userEmail, displayName string
+	var createdAt time.Time
+	err := db.Pool.QueryRow(r.Context(),
+		`SELECT email, display_name, created_at FROM users WHERE id = $1`, userID,
+	).Scan(&userEmail, &displayName, &createdAt)
+	if err != nil {
+		jsonError(w, "usuario no encontrado", http.StatusNotFound)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(map[string]any{
+		"id":           userID,
+		"email":        userEmail,
+		"display_name": displayName,
+		"created_at":   createdAt.Format(time.RFC3339),
+	})
+}
+
+func UpdateMe(w http.ResponseWriter, r *http.Request) {
+	userID, ok := middleware.UserIDFromContext(r.Context())
+	if !ok {
+		jsonError(w, "unauthorized", http.StatusUnauthorized)
+		return
+	}
+
+	var req struct {
+		DisplayName     string `json:"display_name"`
+		CurrentPassword string `json:"current_password"`
+		NewPassword     string `json:"new_password"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		jsonError(w, "invalid request body", http.StatusBadRequest)
+		return
+	}
+
+	// If changing password, validate current password first
+	if req.NewPassword != "" {
+		if len(req.NewPassword) < 8 {
+			jsonError(w, "La nueva contraseña debe tener al menos 8 caracteres", http.StatusBadRequest)
+			return
+		}
+		var currentHash string
+		err := db.Pool.QueryRow(r.Context(),
+			`SELECT password_hash FROM users WHERE id = $1`, userID,
+		).Scan(&currentHash)
+		if err != nil {
+			jsonError(w, "error interno", http.StatusInternalServerError)
+			return
+		}
+		if err := bcrypt.CompareHashAndPassword([]byte(currentHash), []byte(req.CurrentPassword)); err != nil {
+			jsonError(w, "La contraseña actual es incorrecta", http.StatusBadRequest)
+			return
+		}
+		newHash, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
+		if err != nil {
+			jsonError(w, "error procesando contraseña", http.StatusInternalServerError)
+			return
+		}
+		_, err = db.Pool.Exec(r.Context(),
+			`UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2`,
+			string(newHash), userID,
+		)
+		if err != nil {
+			jsonError(w, "error actualizando contraseña", http.StatusInternalServerError)
+			return
+		}
+	}
+
+	// Update display name if provided
+	displayName := strings.TrimSpace(req.DisplayName)
+	if displayName != "" {
+		_, err := db.Pool.Exec(r.Context(),
+			`UPDATE users SET display_name = $1, updated_at = NOW() WHERE id = $2`,
+			displayName, userID,
+		)
+		if err != nil {
+			jsonError(w, "error actualizando perfil", http.StatusInternalServerError)
+			return
+		}
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
 
 func jsonError(w http.ResponseWriter, msg string, status int) {

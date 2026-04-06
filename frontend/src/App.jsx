@@ -15,6 +15,7 @@ import { Login } from './pages/Login'
 import { Register } from './pages/Register'
 import { ForgotPassword } from './pages/ForgotPassword'
 import { ResetPassword } from './pages/ResetPassword'
+import { Profile } from './pages/Profile'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import { setOnUnauthorized } from './api/client'
 
@@ -33,9 +34,10 @@ const NAV_ITEMS = [
     { id: 'categories', icon: '🗂️', label: 'Categorías' },
     { id: 'historial',  icon: '📋',  label: 'Historial' },
     { id: 'backup',     icon: '💾',  label: 'Backup' },
+    { id: 'profile',    icon: '👤',  label: 'Mi perfil' },
 ]
 
-const NARROW_PAGES = new Set(['load', 'cards', 'recurring', 'categories', 'cotizacion', 'backup'])
+const NARROW_PAGES = new Set(['load', 'cards', 'recurring', 'categories', 'cotizacion', 'backup', 'profile'])
 
 const SIDEBAR_W = 240
 const RAIL_W    = 60
@@ -264,6 +266,7 @@ function AppContent() {
                     {activeTab === 'usd-savings' && <UsdSavings />}
                     {activeTab === 'historial'  && <Historial />}
                     {activeTab === 'backup'     && <div className="md:max-w-lg"><Backup /></div>}
+                    {activeTab === 'profile'    && <Profile />}
                 </div>
             </div>
         </div>
