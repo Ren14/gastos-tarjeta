@@ -327,10 +327,20 @@ export function Dashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [regularExpenses, recurringDefs, selectedYear, rate, generatedByRecurringId])
 
-    const visibleRegular = useMemo(() =>
-        regularExpenses.filter(e => getYearlyAmounts(e, selectedYear).some(a => a > 0)),
-        [regularExpenses, selectedYear]
-    )
+    const visibleRegular = useMemo(() => {
+        const startIdx = selectedYear === currentYear ? currentMonth - 1 : 0
+        return regularExpenses.filter(e =>
+            getYearlyAmounts(e, selectedYear).slice(startIdx).some(a => a > 0)
+        )
+    }, [regularExpenses, selectedYear, currentYear, currentMonth])
+
+    const visibleRecurringDefs = useMemo(() => {
+        const startIdx = selectedYear === currentYear ? currentMonth - 1 : 0
+        return recurringDefs.filter(def =>
+            recurringAmounts(def).slice(startIdx).some(c => c.value > 0)
+        )
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [recurringDefs, selectedYear, currentYear, currentMonth, generatedByRecurringId, rate])
 
     const selectedCard = cards.find(c => c.id === selectedCardId)
     const cardLabel    = selectedCard?.name?.split(' ')[0]?.substring(0, 7) ?? ''
@@ -525,7 +535,7 @@ export function Dashboard() {
                                 </tr>
 
                                 {/* Recurring rows */}
-                                {recurringDefs.map((def, idx) => {
+                                {visibleRecurringDefs.map((def, idx) => {
                                     const amounts = recurringAmounts(def)
                                     const isEven  = idx % 2 === 0
                                     const base    = isEven ? 'bg-white dark:bg-gray-900' : 'bg-orange-50/20 dark:bg-orange-900/10'
@@ -559,7 +569,7 @@ export function Dashboard() {
                                 })}
 
                                 {/* Divider */}
-                                {recurringDefs.length > 0 && visibleRegular.length > 0 && (
+                                {visibleRecurringDefs.length > 0 && visibleRegular.length > 0 && (
                                     <tr><td colSpan={15} className="p-0 h-px bg-gray-200 dark:bg-gray-700" /></tr>
                                 )}
 
@@ -645,7 +655,7 @@ export function Dashboard() {
                                 })}
 
                                 {/* Empty state */}
-                                {visibleRegular.length === 0 && recurringDefs.length === 0 && (
+                                {visibleRegular.length === 0 && visibleRecurringDefs.length === 0 && (
                                     <tr>
                                         <td colSpan={15} className="px-4 py-10 text-center text-sm text-gray-400 dark:text-gray-500">
                                             No hay gastos para {selectedCard?.name ?? ''} en {selectedYear}
