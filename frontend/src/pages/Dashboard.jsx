@@ -47,6 +47,10 @@ function fmt(n) {
     return n.toLocaleString('es-AR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })
 }
 
+function fmtAmt(n) {
+    return `${n < 0 ? '-' : ''}$${fmt(Math.abs(n))}`
+}
+
 function fmtDate(dateStr) {
     if (!dateStr) return ''
     return `${dateStr.substring(8, 10)}/${dateStr.substring(5, 7)}`
@@ -145,9 +149,9 @@ function SummaryMatrix({ projection, projLoading, selectedYear, selectedCardId, 
                                 <td key={i}
                                     className={`px-3 py-3 text-right text-sm font-bold whitespace-nowrap tabular-nums font-mono ${
                                         isCur(month) ? 'bg-gray-800' : 'bg-gray-900'
-                                    } ${total > 0 ? (isPast(month) ? 'text-gray-500' : 'text-white') : 'text-gray-700'}`}>
-                                    {total > 0 && (
-                                        <>{estimated && <span className="text-orange-300">~</span>}${fmt(total)}</>
+                                    } ${total === 0 ? 'text-gray-700' : total < 0 ? 'text-green-400' : isPast(month) ? 'text-gray-500' : 'text-white'}`}>
+                                    {total !== 0 && (
+                                        <>{estimated && <span className="text-orange-300">~</span>}{fmtAmt(total)}</>
                                     )}
                                 </td>
                             )
@@ -181,9 +185,9 @@ function SummaryMatrix({ projection, projLoading, selectedYear, selectedCardId, 
                                                 isCur(month)
                                                     ? isSelected ? 'bg-blue-100 dark:bg-blue-900/30' : 'bg-blue-50 dark:bg-blue-900/20 group-hover:bg-blue-100/60'
                                                     : isPast(month) ? 'bg-gray-100 dark:bg-gray-800' : ''
-                                            } ${total === 0 ? 'text-gray-300 dark:text-gray-700' : isPast(month) ? 'text-gray-400 dark:text-gray-500 font-medium' : estimated ? 'text-orange-500' : 'text-gray-800 dark:text-gray-200 font-medium'}`}>
-                                            {total > 0 && (
-                                                <>{estimated && '~'}${fmt(total)}</>
+                                            } ${total === 0 ? 'text-gray-300 dark:text-gray-700' : total < 0 ? 'text-green-600 dark:text-green-400 font-medium' : isPast(month) ? 'text-gray-400 dark:text-gray-500 font-medium' : estimated ? 'text-orange-500' : 'text-gray-800 dark:text-gray-200 font-medium'}`}>
+                                            {total !== 0 && (
+                                                <>{estimated && '~'}{fmtAmt(total)}</>
                                             )}
                                         </td>
                                     )
@@ -330,14 +334,14 @@ export function Dashboard() {
     const visibleRegular = useMemo(() => {
         const startIdx = selectedYear === currentYear ? currentMonth - 1 : 0
         return regularExpenses.filter(e =>
-            getYearlyAmounts(e, selectedYear).slice(startIdx).some(a => a > 0)
+            getYearlyAmounts(e, selectedYear).slice(startIdx).some(a => a !== 0)
         )
     }, [regularExpenses, selectedYear, currentYear, currentMonth])
 
     const visibleRecurringDefs = useMemo(() => {
         const startIdx = selectedYear === currentYear ? currentMonth - 1 : 0
         return recurringDefs.filter(def =>
-            recurringAmounts(def).slice(startIdx).some(c => c.value > 0)
+            recurringAmounts(def).slice(startIdx).some(c => c.value !== 0)
         )
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [recurringDefs, selectedYear, currentYear, currentMonth, generatedByRecurringId, rate])
@@ -528,8 +532,8 @@ export function Dashboard() {
                                         <td key={i}
                                             className={`px-2 py-3 text-right text-sm font-bold whitespace-nowrap tabular-nums font-mono ${
                                                 isCurMonth(month) ? 'bg-gray-800' : 'bg-gray-900'
-                                            } ${monthlyTotals[i] > 0 ? (isPastMonth(month) ? 'text-gray-500' : 'text-white') : 'text-gray-700'}`}>
-                                            {monthlyTotals[i] > 0 ? `$${fmt(monthlyTotals[i])}` : ''}
+                                            } ${monthlyTotals[i] === 0 ? 'text-gray-700' : monthlyTotals[i] < 0 ? 'text-green-400' : isPastMonth(month) ? 'text-gray-500' : 'text-white'}`}>
+                                            {monthlyTotals[i] !== 0 ? fmtAmt(monthlyTotals[i]) : ''}
                                         </td>
                                     ))}
                                 </tr>
@@ -559,8 +563,8 @@ export function Dashboard() {
                                                 <td key={i}
                                                     className={`px-2 py-2 text-right text-sm whitespace-nowrap tabular-nums font-mono group-hover:bg-orange-50/60 ${
                                                         isCurMonth(month) ? 'bg-blue-50 dark:bg-blue-900/20 group-hover:bg-blue-100/30' : isPastMonth(month) ? 'bg-gray-100/60 dark:bg-gray-800' : ''
-                                                    } ${cell.estimated ? 'text-orange-400' : cell.value > 0 ? (isPastMonth(month) ? 'text-gray-400 dark:text-gray-500 font-medium' : 'text-gray-800 dark:text-gray-200 font-medium') : ''}`}>
-                                                    {cell.value > 0 ? `${cell.estimated ? '~' : ''}$${fmt(cell.value)}` : ''}
+                                                    } ${cell.estimated ? 'text-orange-400' : cell.value < 0 ? 'text-green-600 dark:text-green-400 font-medium' : cell.value > 0 ? (isPastMonth(month) ? 'text-gray-400 dark:text-gray-500 font-medium' : 'text-gray-800 dark:text-gray-200 font-medium') : ''}`}>
+                                                    {cell.value !== 0 ? `${cell.estimated ? '~' : ''}${fmtAmt(cell.value)}` : ''}
                                                 </td>
                                                 )
                                             })}
@@ -642,9 +646,9 @@ export function Dashboard() {
                                                         onClick={() => startEdit(e, i)}
                                                         className={`px-2 py-2 text-right text-sm whitespace-nowrap tabular-nums font-mono cursor-pointer group-hover:bg-gray-100 dark:group-hover:bg-gray-700 group/cell ${
                                                             isCurMonth(month) ? 'bg-blue-50 dark:bg-blue-900/20 group-hover:bg-blue-100/50' : isPastMonth(month) ? 'bg-gray-100/60 dark:bg-gray-800' : ''
-                                                        } ${amount > 0 ? getAmountTextClass(e, i) : ''}`}>
-                                                        {amount > 0
-                                                            ? `$${fmt(amount)}`
+                                                        } ${amount !== 0 ? (amount < 0 ? 'text-green-600 dark:text-green-400 font-medium' : getAmountTextClass(e, i)) : ''}`}>
+                                                        {amount !== 0
+                                                            ? fmtAmt(amount)
                                                             : <span className="invisible group-hover/cell:visible text-gray-300 text-xs select-none">+</span>
                                                         }
                                                     </td>
