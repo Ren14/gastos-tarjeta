@@ -57,7 +57,7 @@ function CardsSection() {
     const [msg, setMsg] = useState(null)
 
     useEffect(() => {
-        api.getCards().then(data => setCards(data.filter(c => c.active)))
+        api.getCardsAll().then(data => setCards(data))
     }, [])
 
     function startEdit(card) {
@@ -71,9 +71,10 @@ function CardsSection() {
         setLoading(true)
         setMsg(null)
         try {
-            await api.updateCard(editingId, { ...editForm, active: true })
-            const updated = await api.getCards()
-            setCards(updated.filter(c => c.active))
+            const card = cards.find(c => c.id === editingId)
+            await api.updateCard(editingId, { ...editForm, active: card?.active ?? true })
+            const updated = await api.getCardsAll()
+            setCards(updated)
             setEditingId(null)
             setMsg({ type: 'success', text: 'Tarjeta actualizada' })
         } catch {
@@ -91,7 +92,7 @@ function CardsSection() {
         setLoading(true)
         try {
             await api.updateCard(card.id, { name: card.name, bank: card.bank, card_type: card.card_type, color_hex: card.color_hex, active: false })
-            setCards(prev => prev.filter(c => c.id !== card.id))
+            setCards(prev => prev.map(c => c.id === card.id ? { ...c, active: false } : c))
             setEditingId(null)
             setConfirmDeactivate(null)
             setMsg({ type: 'success', text: 'Tarjeta desactivada' })
@@ -102,13 +103,27 @@ function CardsSection() {
         }
     }
 
+    async function handleActivate(card) {
+        setLoading(true)
+        try {
+            await api.updateCard(card.id, { name: card.name, bank: card.bank, card_type: card.card_type, color_hex: card.color_hex, active: true })
+            setCards(prev => prev.map(c => c.id === card.id ? { ...c, active: true } : c))
+            setEditingId(null)
+            setMsg({ type: 'success', text: 'Tarjeta activada' })
+        } catch {
+            setMsg({ type: 'error', text: 'Error al activar' })
+        } finally {
+            setLoading(false)
+        }
+    }
+
     async function handleAddCard() {
         setLoading(true)
         setMsg(null)
         try {
             await api.createCard({ ...newCard, active: true })
-            const updated = await api.getCards()
-            setCards(updated.filter(c => c.active))
+            const updated = await api.getCardsAll()
+            setCards(updated)
             setNewCard(EMPTY_CARD)
             setAdding(false)
             setMsg({ type: 'success', text: 'Tarjeta creada' })
@@ -125,25 +140,41 @@ function CardsSection() {
 
             <div className="bg-white dark:bg-gray-800 dark:border-gray-700 border border-gray-200 rounded-xl overflow-hidden mb-3">
                 {cards.length === 0 && (
-                    <p className="text-xs text-gray-400 dark:text-gray-500 text-center py-4">No hay tarjetas activas</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 text-center py-4">No hay tarjetas</p>
                 )}
                 {cards.map((card, i) => (
-                    <div key={card.id} className={i < cards.length - 1 || editingId === card.id ? 'border-b border-gray-100' : ''}>
+                    <div key={card.id} className={`${i < cards.length - 1 || editingId === card.id ? 'border-b border-gray-100 dark:border-gray-700' : ''} ${!card.active ? 'opacity-60' : ''}`}>
                         <div className="flex items-center justify-between px-4 py-3">
                             <div className="flex items-center gap-3">
                                 <span className="w-3 h-3 rounded-full flex-shrink-0"
                                       style={{ backgroundColor: card.color_hex }} />
                                 <div>
-                                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">{card.name}</p>
+                                    <p className="text-sm font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                                        {card.name}
+                                        {!card.active && <span className="text-xs font-normal text-gray-400 dark:text-gray-500 italic">inactiva</span>}
+                                    </p>
                                     <p className="text-xs text-gray-400 dark:text-gray-500">{card.bank} · {card.card_type}</p>
                                 </div>
                             </div>
-                            <button
-                                onClick={() => editingId === card.id ? setEditingId(null) : startEdit(card)}
-                                className="text-xs font-bold text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 px-2 py-1"
-                            >
-                                {editingId === card.id ? 'Cancelar' : 'Editar'}
-                            </button>
+                            <div className="flex items-center gap-2">
+                                {!card.active && (
+                                    <button
+                                        onClick={() => handleActivate(card)}
+                                        disabled={loading}
+                                        className="text-xs font-bold text-blue-500 hover:text-blue-700 px-2 py-1 disabled:opacity-50"
+                                    >
+                                        Activar
+                                    </button>
+                                )}
+                                {card.active && (
+                                    <button
+                                        onClick={() => editingId === card.id ? setEditingId(null) : startEdit(card)}
+                                        className="text-xs font-bold text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 px-2 py-1"
+                                    >
+                                        {editingId === card.id ? 'Cancelar' : 'Editar'}
+                                    </button>
+                                )}
+                            </div>
                         </div>
 
                         {editingId === card.id && (

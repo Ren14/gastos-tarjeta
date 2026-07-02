@@ -71,21 +71,11 @@ const COLOR_OPTIONS = [
 
 // ── Summary matrix (top section) ─────────────────────────────────────────────
 
-function SummaryMatrix({ projection, projLoading, selectedYear, selectedCardId, currentYear, currentMonth, onCardClick, hidePast }) {
+function SummaryMatrix({ projection, projLoading, projCards, selectedYear, selectedCardId, currentYear, currentMonth, onCardClick, hidePast }) {
     const monthMap = useMemo(() => {
         const m = {}
         for (const d of projection) m[d.month] = d
         return m
-    }, [projection])
-
-    const projCards = useMemo(() => {
-        const seen = {}
-        for (const d of projection) {
-            for (const c of d.by_card) {
-                if (!seen[c.card_id]) seen[c.card_id] = c
-            }
-        }
-        return Object.values(seen).sort((a, b) => a.card_name.localeCompare(b.card_name))
     }, [projection])
 
     const isCur  = (m) => m === currentMonth && selectedYear === currentYear
@@ -232,12 +222,35 @@ export function Dashboard() {
     const { categories }                     = useCategories()
     const { projection, loading: projLoading } = useProjection(12, 1, selectedYear)
 
-    // Default to first card
-    useEffect(() => {
-        if (cards.length > 0 && selectedCardId === null) {
-            setSelectedCardId(cards[0].id)
+    // Cards visible en el Resumen: activas siempre + inactivas con cuotas en mes actual o posteriores
+    const projCards = useMemo(() => {
+        const seen = {}
+        for (const d of projection) {
+            for (const c of d.by_card) {
+                if (!seen[c.card_id]) seen[c.card_id] = { ...c, monthAmounts: {} }
+                seen[c.card_id].monthAmounts[d.month] = c.total
+            }
         }
-    }, [cards])
+        return Object.values(seen)
+            .filter(c => {
+                if (c.active) return true
+                return Object.entries(c.monthAmounts).some(([month, total]) => {
+                    const m = parseInt(month)
+                    const isFuture = selectedYear > currentYear ||
+                        (selectedYear === currentYear && m >= currentMonth)
+                    return isFuture && total !== 0
+                })
+            })
+            .sort((a, b) => a.card_name.localeCompare(b.card_name))
+    }, [projection, currentYear, currentMonth, selectedYear])
+
+    // Default to first available card (activas primero, luego inactivas con cuotas)
+    useEffect(() => {
+        if (projCards.length > 0 && selectedCardId === null) {
+            const firstActive = projCards.find(c => c.active) ?? projCards[0]
+            setSelectedCardId(firstActive.card_id)
+        }
+    }, [projCards])
 
     // Fetch detail data when card or refreshKey changes
     useEffect(() => {
@@ -346,8 +359,8 @@ export function Dashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [recurringDefs, selectedYear, currentYear, currentMonth, generatedByRecurringId, rate])
 
-    const selectedCard = cards.find(c => c.id === selectedCardId)
-    const cardLabel    = selectedCard?.name?.split(' ')[0]?.substring(0, 7) ?? ''
+    const selectedCard = projCards.find(c => c.card_id === selectedCardId)
+    const cardLabel    = selectedCard?.card_name?.split(' ')[0]?.substring(0, 7) ?? ''
 
     function openEdit(e) {
         setSelectedExpense({
@@ -419,7 +432,7 @@ export function Dashboard() {
         return isPresto || isPastMonth(monthIdx + 1) ? 'text-gray-400 dark:text-gray-500 font-medium' : 'text-gray-800 dark:text-gray-200 font-medium'
     }
 
-    if (!cards.length) {
+    if (projLoading && !projCards.length) {
         return <p className="text-center text-gray-400 py-8">Loading…</p>
     }
 
@@ -432,7 +445,7 @@ export function Dashboard() {
                     onChange={e => setSelectedCardId(Number(e.target.value))}
                     className="px-3 py-2 border-2 border-gray-900 dark:border-gray-400 rounded-xl text-sm font-bold outline-none bg-white dark:bg-gray-800 dark:text-gray-100 appearance-none"
                 >
-                    {cards.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                    {projCards.map(c => <option key={c.card_id} value={c.card_id}>{c.card_name}{!c.active ? ' (inactiva)' : ''}</option>)}
                 </select>
 
                 <div className="flex items-center gap-1">
@@ -462,6 +475,7 @@ export function Dashboard() {
             <SummaryMatrix
                 projection={projection}
                 projLoading={projLoading}
+                projCards={projCards}
                 selectedYear={selectedYear}
                 selectedCardId={selectedCardId}
                 currentYear={currentYear}
@@ -477,7 +491,7 @@ export function Dashboard() {
                     <div className="h-px flex-1 bg-gray-200 dark:bg-gray-700" />
                     <span className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest whitespace-nowrap">
                         {selectedCard
-                            ? `Detalle — ${selectedCard.name}`
+                            ? `Detalle — ${selectedCard.card_name}`
                             : 'Detalle'}
                     </span>
                     <div className="h-px flex-1 bg-gray-200 dark:bg-gray-700" />
@@ -662,7 +676,7 @@ export function Dashboard() {
                                 {visibleRegular.length === 0 && visibleRecurringDefs.length === 0 && (
                                     <tr>
                                         <td colSpan={15} className="px-4 py-10 text-center text-sm text-gray-400 dark:text-gray-500">
-                                            No hay gastos para {selectedCard?.name ?? ''} en {selectedYear}
+                                            No hay gastos para {selectedCard?.card_name ?? ''} en {selectedYear}
                                         </td>
                                     </tr>
                                 )}

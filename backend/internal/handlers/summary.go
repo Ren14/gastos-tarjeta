@@ -197,9 +197,9 @@ func GetProjection(w http.ResponseWriter, r *http.Request) {
 		months = 6
 	}
 
-	// Traemos todas las tarjetas activas
+	// Traemos todas las tarjetas (activas e inactivas)
 	cardRows, err := db.Pool.Query(context.Background(),
-		"SELECT id, name, COALESCE(color_hex,'') FROM cards WHERE active = true ORDER BY name")
+		"SELECT id, name, COALESCE(color_hex,''), active FROM cards ORDER BY name")
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -210,11 +210,12 @@ func GetProjection(w http.ResponseWriter, r *http.Request) {
 		ID       int
 		Name     string
 		ColorHex string
+		Active   bool
 	}
 	cardMap := map[int]CardInfo{}
 	for cardRows.Next() {
 		var c CardInfo
-		cardRows.Scan(&c.ID, &c.Name, &c.ColorHex)
+		cardRows.Scan(&c.ID, &c.Name, &c.ColorHex, &c.Active)
 		cardMap[c.ID] = c
 	}
 
@@ -413,6 +414,7 @@ func GetProjection(w http.ResponseWriter, r *http.Request) {
 				CardName: info.Name,
 				ColorHex: info.ColorHex,
 				Total:    cardTotal,
+				Active:   info.Active,
 			})
 			total += cardTotal
 			if cardTotal > 0 {

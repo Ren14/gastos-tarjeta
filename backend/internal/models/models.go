@@ -83,4 +83,5 @@ type CardSummary struct {
 	CardName string  `json:"card_name"`
 	ColorHex string  `json:"color_hex"`
 	Total    float64 `json:"total"`
+	Active   bool    `json:"active"`
 }

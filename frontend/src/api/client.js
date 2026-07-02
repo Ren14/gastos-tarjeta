@@ -35,6 +35,7 @@ async function request(path, options = {}) {
 export const api = {
     // Cards
     getCards: () => request('/cards'),
+    getCardsAll: () => request('/cards?include_inactive=true'),
     createCard: (data) => request('/cards', {method: 'POST', body: JSON.stringify(data)}),
     updateCard: (id, data) => request(`/cards/${id}`, {method: 'PUT', body: JSON.stringify(data)}),
 

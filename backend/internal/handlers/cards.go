@@ -14,8 +14,13 @@ import (
 )
 
 func GetCards(w http.ResponseWriter, r *http.Request) {
-	rows, err := db.Pool.Query(context.Background(),
-		"SELECT id, name, COALESCE(bank,''), COALESCE(card_type,''), COALESCE(color_hex,''), active, created_at FROM cards WHERE active = true ORDER BY name")
+	includeInactive := r.URL.Query().Get("include_inactive") == "true"
+	query := "SELECT id, name, COALESCE(bank,''), COALESCE(card_type,''), COALESCE(color_hex,''), active, created_at FROM cards"
+	if !includeInactive {
+		query += " WHERE active = true"
+	}
+	query += " ORDER BY name"
+	rows, err := db.Pool.Query(context.Background(), query)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
