@@ -246,18 +246,18 @@ function CategoryModal({ categories, onClose, onSaved }) {
             name: editName.trim() || cat.name,
             type: editType || cat.type,
             sort_order: cat.sort_order,
-            active: true,
+            active: cat.active,
         })
         setEditingId(null)
         onSaved()
     }
 
-    async function handleDeactivate(cat) {
+    async function handleToggleVisibility(cat) {
         await api.updateCashflowCategory(cat.id, {
             name: cat.name,
             type: cat.type,
             sort_order: cat.sort_order,
-            active: false,
+            active: !cat.active,
         })
         onSaved()
     }
@@ -299,7 +299,7 @@ function CategoryModal({ categories, onClose, onSaved }) {
                         <div key={t} className="mb-4">
                             <p className="text-xs font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest mb-2">{label}</p>
                             {cats.map(cat => (
-                                <div key={cat.id} className="flex items-center gap-2 py-1.5 border-b border-gray-100 dark:border-gray-700 last:border-0">
+                                <div key={cat.id} className={`flex items-center gap-2 py-1.5 border-b border-gray-100 dark:border-gray-700 last:border-0 ${!cat.active ? 'opacity-50' : ''}`}>
                                     {editingId === cat.id ? (
                                         <>
                                             <input value={editName} onChange={e => setEditName(e.target.value)}
@@ -312,11 +312,18 @@ function CategoryModal({ categories, onClose, onSaved }) {
                                         </>
                                     ) : (
                                         <>
-                                            <span className="flex-1 text-sm text-gray-800 dark:text-gray-200">{cat.name}</span>
-                                            <button onClick={() => { setEditingId(cat.id); setEditName(cat.name); setEditType(cat.type) }}
-                                                className="text-xs text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">✏</button>
-                                            <button onClick={() => handleDeactivate(cat)}
-                                                className="text-xs text-red-400 hover:text-red-600">✕</button>
+                                            <span className={`flex-1 text-sm ${cat.active ? 'text-gray-800 dark:text-gray-200' : 'text-gray-400 dark:text-gray-500 italic'}`}>
+                                                {cat.name}
+                                            </span>
+                                            {cat.active && (
+                                                <button onClick={() => { setEditingId(cat.id); setEditName(cat.name); setEditType(cat.type) }}
+                                                    className="text-xs text-gray-400 dark:text-gray-500 hover:text-gray-700 dark:hover:text-gray-300">✏</button>
+                                            )}
+                                            <button
+                                                onClick={() => handleToggleVisibility(cat)}
+                                                className={`text-xs font-medium px-1.5 py-0.5 rounded ${cat.active ? 'text-gray-400 hover:text-gray-600 dark:hover:text-gray-300' : 'text-blue-500 hover:text-blue-700'}`}>
+                                                {cat.active ? 'Ocultar' : 'Mostrar'}
+                                            </button>
                                         </>
                                     )}
                                 </div>
@@ -630,7 +637,7 @@ export function Flujo() {
         setLoading(true)
         try {
             const [cats, ents, cards, clasifs] = await Promise.all([
-                api.getCashflowCategories(),
+                api.getCashflowCategoriesAll(),
                 api.getCashflowEntries(selectedYear),
                 api.getCardTotals(selectedYear),
                 api.getClasificaciones(),
@@ -716,8 +723,8 @@ export function Flujo() {
         return t
     }, [cardTotals])
 
-    const incomeCategories  = categories.filter(c => c.type === 'income')
-    const expenseCategories = categories.filter(c => c.type === 'expense')
+    const incomeCategories  = categories.filter(c => c.type === 'income'  && c.active)
+    const expenseCategories = categories.filter(c => c.type === 'expense' && c.active)
 
     const incomeTotals = useMemo(() => Array.from({ length: 12 }, (_, i) => {
         const m = i + 1

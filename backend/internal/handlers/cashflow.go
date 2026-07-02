@@ -41,13 +41,16 @@ type CashflowEntry struct {
 // ── Handlers ──────────────────────────────────────────────────────────────────
 
 func GetCashflowCategories(w http.ResponseWriter, r *http.Request) {
-	rows, err := db.Pool.Query(r.Context(),
-		`SELECT c.id, c.name, c.type, c.sort_order, c.active,
+	includeHidden := r.URL.Query().Get("include_hidden") == "true"
+	query := `SELECT c.id, c.name, c.type, c.sort_order, c.active,
 		        c.clasificacion_id, COALESCE(cl.name, '') AS clasificacion_name
 		 FROM cashflow_categories c
-		 LEFT JOIN flujo_clasificaciones cl ON cl.id = c.clasificacion_id
-		 WHERE c.active = true
-		 ORDER BY c.type, c.sort_order, c.name`)
+		 LEFT JOIN flujo_clasificaciones cl ON cl.id = c.clasificacion_id`
+	if !includeHidden {
+		query += ` WHERE c.active = true`
+	}
+	query += ` ORDER BY c.type, c.sort_order, c.name`
+	rows, err := db.Pool.Query(r.Context(), query)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
