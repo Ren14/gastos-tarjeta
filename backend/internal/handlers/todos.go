@@ -71,32 +71,16 @@ func GetTodos(w http.ResponseWriter, r *http.Request) {
 	}
 	cardRows.Close()
 
-	targetMonth := time.Date(year, time.Month(month), 1, 0, 0, 0, 0, time.UTC)
-
-	expRows, err := db.Pool.Query(r.Context(),
-		"SELECT e.total_amount, e.installments, e.purchase_date, e.card_id FROM expenses e JOIN cards c ON c.id = e.card_id WHERE c.active = true")
+	cardTotals, err := computeCardTotalsForMonth(r.Context(), month, year)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	defer expRows.Close()
-
-	for expRows.Next() {
-		var totalAmount float64
-		var installments, cardID int
-		var purchaseDate time.Time
-		expRows.Scan(&totalAmount, &installments, &purchaseDate, &cardID)
-
-		firstImpact := getFirstImpactMonth(purchaseDate.Format("2006-01-02"))
-		lastImpact := time.Date(firstImpact.Year(), firstImpact.Month()+time.Month(installments)-1, 1, 0, 0, 0, 0, time.UTC)
-		if targetMonth.Before(firstImpact) || targetMonth.After(lastImpact) {
-			continue
-		}
+	for cardID, total := range cardTotals {
 		if c, ok := cardMap[cardID]; ok {
-			c.Total += totalAmount / float64(installments)
+			c.Total = total
 		}
 	}
-	expRows.Close()
 
 	// ── 2. Cobranzas totals for this month ─────────────────────────────────────
 	type cobranzaGroup struct {

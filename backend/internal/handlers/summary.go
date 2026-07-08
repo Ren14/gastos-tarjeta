@@ -190,6 +190,151 @@ func GetSummaryByCard(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(result)
 }
 
+// computeCardTotalsForMonth calculates each active card's total for a single
+// target month, applying the same rules GetProjection uses per-column:
+//   - recurring-generated expenses (recurring_id set) count in the exact
+//     month they were generated for, without running through getFirstImpactMonth
+//   - manually-entered expenses whose merchant matches an *active* recurring
+//     definition are skipped, so they don't double-count once the recurring
+//     generator has taken over that merchant
+//   - if the target month's recurring expenses haven't been generated yet,
+//     an estimated total (from recurring_expenses, converting USD at the
+//     latest known rate) is added instead
+//
+// GetTodos relies on this to keep the TODO tab's card totals consistent with
+// the "Resumen tarjetas" grid.
+func computeCardTotalsForMonth(ctx context.Context, month, year int) (map[int]float64, error) {
+	targetMonth := time.Date(year, time.Month(month), 1, 0, 0, 0, 0, time.UTC)
+	now := time.Now()
+	currentMonthStart := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC)
+	isPast := targetMonth.Before(currentMonthStart)
+
+	totals := map[int]float64{}
+
+	activeCardIDs := map[int]bool{}
+	cardRows, err := db.Pool.Query(ctx, "SELECT id FROM cards WHERE active = true")
+	if err != nil {
+		return nil, err
+	}
+	for cardRows.Next() {
+		var id int
+		if err := cardRows.Scan(&id); err != nil {
+			cardRows.Close()
+			return nil, err
+		}
+		activeCardIDs[id] = true
+		totals[id] = 0
+	}
+	cardRows.Close()
+
+	type recurringItem struct {
+		CardID    int
+		AmountUSD float64
+		AmountARS *float64
+		Currency  string
+	}
+	var recurringItems []recurringItem
+	recurringMerchantSet := map[string]bool{}
+	hasUSDRecurring := false
+
+	recRows, err := db.Pool.Query(ctx,
+		"SELECT card_id, merchant, amount_usd, amount_ars, currency FROM recurring_expenses WHERE active = true")
+	if err != nil {
+		return nil, err
+	}
+	for recRows.Next() {
+		var ri recurringItem
+		var merchant string
+		if err := recRows.Scan(&ri.CardID, &merchant, &ri.AmountUSD, &ri.AmountARS, &ri.Currency); err != nil {
+			recRows.Close()
+			return nil, err
+		}
+		recurringItems = append(recurringItems, ri)
+		recurringMerchantSet[normalizeMerchant(merchant)] = true
+		if ri.Currency == "USD" {
+			hasUSDRecurring = true
+		}
+	}
+	recRows.Close()
+
+	var generatedForTargetMonth bool
+	if err := db.Pool.QueryRow(ctx,
+		`SELECT EXISTS(
+			SELECT 1 FROM expenses
+			WHERE recurring_id IS NOT NULL
+			  AND EXTRACT(MONTH FROM purchase_date)::int = $1
+			  AND EXTRACT(YEAR FROM purchase_date)::int = $2
+		)`, month, year).Scan(&generatedForTargetMonth); err != nil {
+		return nil, err
+	}
+
+	var latestRate float64
+	db.Pool.QueryRow(ctx,
+		"SELECT usd_to_ars FROM exchange_rate_history ORDER BY year DESC, month DESC LIMIT 1",
+	).Scan(&latestRate)
+
+	expRows, err := db.Pool.Query(ctx,
+		`SELECT e.total_amount, e.installments, e.purchase_date, e.card_id, e.recurring_id IS NOT NULL, e.merchant
+		 FROM expenses e JOIN cards c ON c.id = e.card_id WHERE c.active = true`)
+	if err != nil {
+		return nil, err
+	}
+	defer expRows.Close()
+
+	for expRows.Next() {
+		var totalAmount float64
+		var installments, cardID int
+		var purchaseDate time.Time
+		var isRecurring bool
+		var merchant string
+		if err := expRows.Scan(&totalAmount, &installments, &purchaseDate, &cardID, &isRecurring, &merchant); err != nil {
+			return nil, err
+		}
+
+		if isRecurring {
+			if int(purchaseDate.Month()) == month && purchaseDate.Year() == year {
+				totals[cardID] += totalAmount
+			}
+			continue
+		}
+
+		if recurringMerchantSet[normalizeMerchant(merchant)] {
+			continue
+		}
+
+		firstImpact := getFirstImpactMonth(purchaseDate.Format("2006-01-02"))
+		lastImpact := time.Date(firstImpact.Year(), firstImpact.Month()+time.Month(installments)-1, 1, 0, 0, 0, 0, time.UTC)
+		if targetMonth.Before(firstImpact) || targetMonth.After(lastImpact) {
+			continue
+		}
+		totals[cardID] += totalAmount / float64(installments)
+	}
+	expRows.Close()
+
+	rateOKForUSD := !hasUSDRecurring || latestRate > 0
+	hasPending := len(recurringItems) > 0 && !generatedForTargetMonth && rateOKForUSD && !isPast
+	if hasPending {
+		for _, ri := range recurringItems {
+			if !activeCardIDs[ri.CardID] {
+				continue
+			}
+			var amt float64
+			if ri.Currency == "ARS" {
+				if ri.AmountARS != nil {
+					amt = *ri.AmountARS
+				}
+			} else {
+				amt = ri.AmountUSD * latestRate
+			}
+			if amt > 0 {
+				totals[ri.CardID] += amt
+			}
+		}
+	}
+
+	return totals, nil
+}
+
 func GetProjection(w http.ResponseWriter, r *http.Request) {
 	monthsStr := r.URL.Query().Get("months")
 	months, err := strconv.Atoi(monthsStr)
